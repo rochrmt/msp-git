@@ -1,0 +1,9 @@
+<webscript>
+    <shortname>Signature Notifications</shortname>
+    <description>Returns recent signature events (signed/rejected documents) for the current user</description>
+    <url>/msp-ged/signature-notifications</url>
+    <url>/msp-ged/signature-notifications?since={sinceTimestamp}</url>
+    <format default="json">argument</format>
+    <authentication>user</authentication>
+    <transaction>none</transaction>
+</webscript>

@@ -1,0 +1,14 @@
+<webscript>
+   <shortname>AOS Token Consumer for Authentication</shortname>
+   <description>
+   <![CDATA[
+   Redirects to the IdP to start the authentication flow for AOS
+   http://<host>:<port>/alfresco/service/aos/authenticate
+   ]]>
+   </description>
+   <url>/aos/authenticate</url>
+   <format default="html"></format>
+   <authentication>none</authentication>
+   <transaction>required</transaction>
+   <lifecycle>internal</lifecycle>
+</webscript>

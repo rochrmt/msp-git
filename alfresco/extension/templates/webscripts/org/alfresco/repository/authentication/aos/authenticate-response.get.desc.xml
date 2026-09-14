@@ -1,0 +1,14 @@
+<webscript>
+   <shortname>AOS Token Consumer for Authentication</shortname>
+   <description>
+   <![CDATA[
+   The IdP will let the browser store the IDS Token via this GET
+   http://<host>:<port>/alfresco/service/aos/authenticate-response
+   ]]>
+   </description>
+   <url>/aos/authenticate-response</url>
+   <format default="html"></format>
+   <authentication>none</authentication>
+   <transaction>required</transaction>
+   <lifecycle>internal</lifecycle>
+</webscript>

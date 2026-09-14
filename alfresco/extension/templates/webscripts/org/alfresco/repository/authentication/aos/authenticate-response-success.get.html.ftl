@@ -1,0 +1,1 @@
+<p>You are authenticated.</p>

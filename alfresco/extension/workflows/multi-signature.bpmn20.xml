@@ -1,0 +1,536 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xmlns:activiti="http://activiti.org/bpmn"
+   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+   xmlns:omgdc="http://www.omg.org/spec/DD/20100524/DC"
+   xmlns:omgdi="http://www.omg.org/spec/DD/20100524/DI"
+   typeLanguage="http://www.w3.org/2001/XMLSchema"
+   expressionLanguage="http://www.w3.org/1999/XPath"
+   targetNamespace="http://msp-ged.org/signature">
+
+    <process isExecutable="true" id="multiSignatureWorkflow" name="Multi-Signature Workflow">
+
+        <extensionElements>
+            <activiti:executionListener event="start" class="org.alfresco.repo.workflow.activiti.listener.ScriptExecutionListener">
+                <activiti:field name="script">
+                    <activiti:string><![CDATA[
+                        execution.setVariable('wf_signatureRejected', false);
+                        execution.setVariable('wf_signers', new java.util.ArrayList());
+                        execution.setVariable('wf_signCount', 0);
+                        execution.setVariable('wf_initiatedBy', initiator.properties.userName);
+                    ]]></activiti:string>
+                </activiti:field>
+            </activiti:executionListener>
+        </extensionElements>
+
+        <startEvent id="start" activiti:formKey="sg:submitSignatureTask" />
+
+        <sequenceFlow id="flow1" sourceRef="start" targetRef="signTask" />
+
+        <userTask id="signTask" name="Sign Document"
+            activiti:formKey="sg:signTask">
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="script">
+                        <activiti:string><![CDATA[
+                            if (typeof bpm_workflowDueDate != 'undefined') task.dueDate = bpm_workflowDueDate;
+                            if (typeof bpm_workflowPriority != 'undefined') task.priority = bpm_workflowPriority;
+
+                            // Notify the assigned signatory: ASSIGNMENT event
+                            try {
+                                var authUtil = null;
+                                try {
+                                    authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
+                                } catch(e1) {
+                                    if (typeof logger != 'undefined') logger.error("Packages not available: " + e1);
+                                }
+
+                                function createAssignmentNotif() {
+                                    var shared = companyhome.childByNamePath("Shared");
+                                    if (shared == null) { shared = companyhome; }
+                                    var notifFolder = shared.childByNamePath("Signature Notifications");
+                                    if (notifFolder == null) {
+                                        notifFolder = shared.createNode("Signature Notifications", "cm:folder");
+                                    }
+                                    if (notifFolder != null) {
+                                        var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
+                                        var docName = '';
+                                        var docRef = '';
+                                        if (pkg && pkg.children && pkg.children.length > 0) {
+                                            docName = pkg.children[0].name;
+                                            docRef = pkg.children[0].nodeRef.toString();
+                                        }
+                                        var recipient = signAssignee.properties.userName;
+                                        var taskId = task.getId();
+
+                                        var notif = notifFolder.createNode("notif-" + recipient + "-" + Date.now(), "cm:content");
+                                        notif.addAspect("sg:notification");
+                                        notif.properties["sg:recipient"] = recipient;
+                                        notif.properties["sg:eventType"] = "ASSIGNMENT";
+                                        notif.properties["sg:notificationDocumentName"] = docName;
+                                        notif.properties["sg:signerName"] = recipient;
+                                        notif.properties["sg:workflowId"] = execution.getProcessInstanceId();
+                                        notif.properties["sg:notificationRead"] = false;
+                                        notif.properties["sg:notificationDate"] = new Date();
+                                        notif.properties["sg:documentNodeRef"] = docRef;
+                                        notif.properties["sg:taskId"] = taskId;
+                                        notif.save();
+
+                                        // Send email notification
+                                        try {
+                                            var personService = companyhome.childrenByXPath("*[@cm:userName='" + recipient + "']")[0];
+                                            var email = personService.properties.email;
+                                            if (email && email.length > 0) {
+                                                var mailAction = actions.create("mail");
+                                                mailAction.parameters["to"] = email;
+                                                mailAction.parameters["subject"] = "[MSP-GED] Tâche de signature assignée: " + docName;
+                                                mailAction.parameters["text"] = "Bonjour " + recipient + ",\n\n" +
+                                                    "Une tâche de signature vous a été assignée.\n\n" +
+                                                    "DÉTAILS DE LA TÂCHE:\n" +
+                                                    "----------------------\n" +
+                                                    "Document: " + docName + "\n" +
+                                                    "Initié par: " + execution.getVariable('wf_initiatedBy') + "\n" +
+                                                    "Date d'assignation: " + new Date() + "\n\n" +
+                                                    "ACTION REQUISE:\n" +
+                                                    "--------------\n" +
+                                                    "Vous devez examiner le document puis le SIGNER ou le REJETER.\n\n" +
+                                                    "Pour accéder à la tâche, connectez-vous à Alfresco Share:\n" +
+                                                    "http://localhost/share/page/task-edit?taskId=activiti$" + taskId + "\n\n" +
+                                                    "Cordialement,\n" +
+                                                    "Système de signature MSP-GED";
+                                                mailAction.executeAsynchronously(notif);
+                                            }
+                                        } catch(mailErr) {
+                                            if (typeof logger != 'undefined') logger.error("ASSIGNMENT email failed: " + mailErr);
+                                        }
+                                    }
+                                }
+
+                                if (authUtil != null) {
+                                    authUtil.pushAuthentication();
+                                    authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
+                                    try {
+                                        createAssignmentNotif();
+                                    } finally {
+                                        authUtil.popAuthentication();
+                                    }
+                                } else {
+                                    createAssignmentNotif();
+                                }
+                            } catch(e) {
+                                if (typeof logger != 'undefined') logger.error("ASSIGNMENT notification failed: " + e);
+                            }
+                        ]]></activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+                <activiti:taskListener event="complete" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="script">
+                        <activiti:string><![CDATA[
+                            var outcome = task.getVariable('sg_signOutcome');
+                            execution.setVariable('sg_signOutcome', outcome);
+                            var currentSigner = signAssignee.properties.userName;
+                            if (outcome == 'Reject') {
+                                execution.setVariable('wf_signatureRejected', true);
+                                execution.setVariable('wf_rejectedBy', currentSigner);
+                                var comment = task.getVariable('bpm_comment');
+                                execution.setVariable('wf_rejectionComment', (comment != null) ? comment : '');
+                            } else {
+                                var signers = execution.getVariable('wf_signers');
+                                if (signers == null) {
+                                    signers = new java.util.ArrayList();
+                                }
+                                signers.add(currentSigner);
+                                execution.setVariable('wf_signers', signers);
+                            }
+
+                            // Notify the initiator: SIGNED or REJECTED event
+                            try {
+                                var authUtil = null;
+                                try {
+                                    authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
+                                } catch(e1) {
+                                    if (typeof logger != 'undefined') logger.error("Packages not available in complete: " + e1);
+                                }
+
+                                function createSignedNotif() {
+                                    var shared = companyhome.childByNamePath("Shared");
+                                    if (shared == null) { shared = companyhome; }
+                                    var notifFolder = shared.childByNamePath("Signature Notifications");
+                                    if (notifFolder == null) {
+                                        notifFolder = shared.createNode("Signature Notifications", "cm:folder");
+                                    }
+                                    if (notifFolder != null) {
+                                        var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
+                                        var docName = '';
+                                        var docRef = '';
+                                        if (pkg && pkg.children && pkg.children.length > 0) {
+                                            docName = pkg.children[0].name;
+                                            docRef = pkg.children[0].nodeRef.toString();
+                                        }
+                                        var initiatedBy = execution.getVariable('wf_initiatedBy');
+                                        var eventType = (outcome == 'Reject') ? 'REJECTED' : 'SIGNED';
+
+                                        var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + Date.now(), "cm:content");
+                                        notif.addAspect("sg:notification");
+                                        notif.properties["sg:recipient"] = initiatedBy;
+                                        notif.properties["sg:eventType"] = eventType;
+                                        notif.properties["sg:notificationDocumentName"] = docName;
+                                        notif.properties["sg:signerName"] = currentSigner;
+                                        notif.properties["sg:workflowId"] = execution.getProcessInstanceId();
+                                        notif.properties["sg:notificationRead"] = false;
+                                        notif.properties["sg:notificationDate"] = new Date();
+                                        notif.properties["sg:documentNodeRef"] = docRef;
+                                        notif.save();
+
+                                        // Send email notification to initiator
+                                        try {
+                                            var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
+                                            var email = personNode.properties.email;
+                                            if (email && email.length > 0) {
+                                                var subject = '';
+                                                var body = '';
+                                                if (outcome == 'Reject') {
+                                                    subject = "[MSP-GED] Document REJETÉ: " + docName;
+                                                    body = "Bonjour " + initiatedBy + ",\n\n" +
+                                                        "Le document que vous avez soumis pour signature a été REJETÉ.\n\n" +
+                                                        "DÉTAILS DU REJET:\n" +
+                                                        "-----------------\n" +
+                                                        "Document: " + docName + "\n" +
+                                                        "Rejeté par: " + currentSigner + "\n" +
+                                                        "Date du rejet: " + new Date() + "\n";
+                                                    var rejectComment = execution.getVariable('wf_rejectionComment');
+                                                    if (rejectComment != null && rejectComment != '') {
+                                                        body += "Commentaire du signataire: " + rejectComment + "\n";
+                                                    }
+                                                    body += "\n" +
+                                                        "STATUT DU WORKFLOW:\n" +
+                                                        "-------------------\n" +
+                                                        "Le workflow a été interrompu. Le document n'a pas été signé.\n\n" +
+                                                        "Pour consulter le document, connectez-vous à Alfresco:\n" +
+                                                        "http://localhost/share/\n\n" +
+                                                        "Cordialement,\n" +
+                                                        "Système de signature MSP-GED";
+                                                } else {
+                                                    subject = "[MSP-GED] Document SIGNÉ: " + docName;
+                                                    body = "Bonjour " + initiatedBy + ",\n\n" +
+                                                        "Un signataire vient de signer votre document.\n\n" +
+                                                        "DÉTAILS DE LA SIGNATURE:\n" +
+                                                        "------------------------\n" +
+                                                        "Document: " + docName + "\n" +
+                                                        "Signé par: " + currentSigner + "\n" +
+                                                        "Date de signature: " + new Date() + "\n\n" +
+                                                        "PROGRESSION DU WORKFLOW:\n" +
+                                                        "------------------------\n";
+                                                    var signersList = execution.getVariable('wf_signers');
+                                                    if (signersList != null) {
+                                                        body += "Signataires ayant signé: " + signersList.toString() + "\n";
+                                                    }
+                                                    body += "Le workflow continue avec les signataires restants.\n\n" +
+                                                        "Pour consulter le document, connectez-vous à Alfresco:\n" +
+                                                        "http://localhost/share/\n\n" +
+                                                        "Cordialement,\n" +
+                                                        "Système de signature MSP-GED";
+                                                }
+                                                var mailAction = actions.create("mail");
+                                                mailAction.parameters["to"] = email;
+                                                mailAction.parameters["subject"] = subject;
+                                                mailAction.parameters["text"] = body;
+                                                mailAction.executeAsynchronously(notif);
+                                            }
+                                        } catch(mailErr) {
+                                            if (typeof logger != 'undefined') logger.error("SIGNED/REJECTED email failed: " + mailErr);
+                                        }
+                                    }
+                                }
+
+                                if (authUtil != null) {
+                                    authUtil.pushAuthentication();
+                                    authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
+                                    try {
+                                        createSignedNotif();
+                                    } finally {
+                                        authUtil.popAuthentication();
+                                    }
+                                } else {
+                                    createSignedNotif();
+                                }
+                            } catch(e) {
+                                if (typeof logger != 'undefined') logger.error("SIGNED/REJECTED notification failed: " + e);
+                            }
+                        ]]></activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+            <humanPerformer>
+                <resourceAssignmentExpression>
+                    <formalExpression>${signAssignee.properties.userName}</formalExpression>
+                </resourceAssignmentExpression>
+            </humanPerformer>
+            <multiInstanceLoopCharacteristics isSequential="true">
+                <loopDataInputRef>bpm_assignees</loopDataInputRef>
+                <inputDataItem name="signAssignee" />
+                <completionCondition>${wf_signatureRejected == true}</completionCondition>
+            </multiInstanceLoopCharacteristics>
+        </userTask>
+
+        <sequenceFlow id="flow2" sourceRef="signTask" targetRef="signatureDecision" />
+
+        <exclusiveGateway id="signatureDecision" name="Signature Decision" />
+
+        <sequenceFlow id="flowToReject" sourceRef="signatureDecision" targetRef="recordRejection">
+            <conditionExpression xsi:type="tFormalExpression">${wf_signatureRejected == true}</conditionExpression>
+        </sequenceFlow>
+
+        <serviceTask id="recordRejection" name="Record Rejection"
+            activiti:class="org.alfresco.repo.workflow.activiti.script.AlfrescoScriptDelegate">
+            <extensionElements>
+                <activiti:field name="script">
+                    <activiti:string>
+                        <![CDATA[
+                        var authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
+                        authUtil.pushAuthentication();
+                        authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
+                        try {
+                            var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
+                            var children = pkg.children;
+                            var rejectedBy = execution.getVariable('wf_rejectedBy');
+                            var rejectionComment = execution.getVariable('wf_rejectionComment');
+                            var initiatedBy = execution.getVariable('wf_initiatedBy');
+                            var ctx = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
+                            var taggingService = ctx.getBean('taggingService', org.alfresco.service.cmr.tagging.TaggingService);
+
+                            for (var i = 0; i < children.length; i++) {
+                                var doc = children[i];
+                                if (doc != null) {
+                                    doc.addAspect("sg:signature");
+                                    doc.properties["sg:signatureStatus"] = "REJECTED";
+                                    doc.properties["sg:rejectedBy"] = rejectedBy;
+                                    doc.properties["sg:rejectionDate"] = new java.util.Date();
+                                    doc.properties["sg:initiatedBy"] = initiatedBy;
+                                    if (rejectionComment != null && rejectionComment != '') {
+                                        doc.properties["sg:rejectionComment"] = rejectionComment;
+                                    }
+                                    doc.save();
+                                    taggingService.addTag(doc.nodeRef, "rejeté");
+                                }
+                            }
+                        } catch(e) {
+                            if (typeof logger != 'undefined') logger.error("recordRejection failed: " + e);
+                        } finally {
+                            authUtil.popAuthentication();
+                        }
+                        ]]>
+                    </activiti:string>
+                </activiti:field>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flowToRejected" sourceRef="recordRejection" targetRef="rejected" />
+
+        <sequenceFlow id="flowToFinalize" sourceRef="signatureDecision" targetRef="finalizeSignature">
+            <conditionExpression xsi:type="tFormalExpression">${wf_signatureRejected == false}</conditionExpression>
+        </sequenceFlow>
+
+        <serviceTask id="finalizeSignature" name="Finalize Signature"
+            activiti:class="org.alfresco.repo.workflow.activiti.script.AlfrescoScriptDelegate">
+            <extensionElements>
+                <activiti:field name="script">
+                    <activiti:string>
+                        <![CDATA[
+                        var authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
+                        authUtil.pushAuthentication();
+                        authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
+                        try {
+                            var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
+                            var children = pkg.children;
+                            var signers = execution.getVariable('wf_signers');
+                            if (signers == null) {
+                                signers = new java.util.ArrayList();
+                            }
+                            var initiatedBy = execution.getVariable('wf_initiatedBy');
+                            var ctx = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
+                            var contentService = ctx.getBean('contentService', org.alfresco.service.cmr.repository.ContentService);
+                            var taggingService = ctx.getBean('taggingService', org.alfresco.service.cmr.tagging.TaggingService);
+                            var now = new java.util.Date();
+
+                            for (var i = 0; i < children.length; i++) {
+                                var doc = children[i];
+                                if (doc != null) {
+                                    var reader = contentService.getReader(doc.nodeRef, org.alfresco.model.ContentModel.PROP_CONTENT);
+                                    var is = reader.getContentInputStream();
+                                    var digest = Packages.java.security.MessageDigest.getInstance("SHA-256");
+                                    var buffer = Packages.java.lang.reflect.Array.newInstance(Packages.java.lang.Byte.TYPE, 8192);
+                                    var bytesRead;
+                                    while ((bytesRead = is.read(buffer)) > 0) {
+                                        digest.update(buffer, 0, bytesRead);
+                                    }
+                                    is.close();
+
+                                    var hashBytes = digest.digest();
+                                    var hex = "";
+                                    for (var j = 0; j < hashBytes.length; j++) {
+                                        var b = hashBytes[j] & 0xFF;
+                                        if (b < 16) hex += "0";
+                                        hex += b.toString(16);
+                                    }
+
+                                    doc.addAspect("sg:signature");
+                                    doc.properties["sg:signatories"] = signers;
+                                    doc.properties["sg:signatureDate"] = now;
+                                    doc.properties["sg:documentHash"] = hex;
+                                    doc.properties["sg:signatureStatus"] = "SIGNED";
+                                    doc.properties["sg:signCount"] = signers.size();
+                                    doc.properties["sg:initiatedBy"] = initiatedBy;
+                                    doc.save();
+                                    taggingService.addTag(doc.nodeRef, "signé");
+                                }
+                            }
+
+                            // Create COMPLETED notification to initiator
+                            var dict = companyhome.childByNamePath("Data Dictionary");
+                            if (dict != null) {
+                                var notifFolder = dict.childByNamePath("Signature Notifications");
+                                if (notifFolder == null) {
+                                    notifFolder = dict.createNode("Signature Notifications", "cm:folder");
+                                }
+                                if (notifFolder != null) {
+                                    var docName = '';
+                                    var docRef = '';
+                                    if (children.length > 0) {
+                                        docName = children[0].name;
+                                        docRef = children[0].nodeRef.toString();
+                                    }
+                                    var notif = notifFolder.createNode("notif-completed-" + initiatedBy + "-" + Date.now(), "cm:content");
+                                    notif.addAspect("sg:notification");
+                                    notif.properties["sg:recipient"] = initiatedBy;
+                                    notif.properties["sg:eventType"] = "COMPLETED";
+                                    notif.properties["sg:notificationDocumentName"] = docName;
+                                    notif.properties["sg:signerName"] = signers.toString();
+                                    notif.properties["sg:workflowId"] = execution.getProcessInstanceId();
+                                    notif.properties["sg:notificationRead"] = false;
+                                    notif.properties["sg:notificationDate"] = new Date();
+                                    notif.properties["sg:documentNodeRef"] = docRef;
+                                    notif.save();
+
+                                    // Send email notification to initiator
+                                    try {
+                                        var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
+                                        var email = personNode.properties.email;
+                                        if (email && email.length > 0) {
+                                            var mailAction = actions.create("mail");
+                                            mailAction.parameters["to"] = email;
+                                            mailAction.parameters["subject"] = "[MSP-GED] Workflow de signature TERMINÉ: " + docName;
+                                            mailAction.parameters["text"] = "Bonjour " + initiatedBy + ",\n\n" +
+                                                "Le workflow de signature est maintenant TERMINÉ. Tous les signataires ont signé le document.\n\n" +
+                                                "RÉCAPITULATIF:\n" +
+                                                "--------------\n" +
+                                                "Document: " + docName + "\n" +
+                                                "Initié par: " + initiatedBy + "\n" +
+                                                "Date de fin: " + new Date() + "\n" +
+                                                "Signataires: " + signers.toString() + "\n" +
+                                                "Nombre total de signatures: " + signers.size() + "\n\n" +
+                                                "STATUT DU DOCUMENT:\n" +
+                                                "-------------------\n" +
+                                                "Le document est maintenant marqué comme SIGNÉ.\n" +
+                                                "Un hash SHA-256 a été calculé pour garantir l'intégrité du document.\n\n" +
+                                                "Pour consulter le document et ses métadonnées de signature, connectez-vous à Alfresco:\n" +
+                                                "http://localhost/\n\n" +
+                                                "Cordialement,\n" +
+                                                "Système de signature MSP-GED";
+                                            mailAction.executeAsynchronously(notif);
+                                        }
+                                    } catch(mailErr) {
+                                        if (typeof logger != 'undefined') logger.error("COMPLETED email failed: " + mailErr);
+                                    }
+                                }
+                            }
+                        } catch(e) {
+                            if (typeof logger != 'undefined') logger.error("finalizeSignature failed: " + e);
+                        } finally {
+                            authUtil.popAuthentication();
+                        }
+                        ]]>
+                    </activiti:string>
+                </activiti:field>
+            </extensionElements>
+        </serviceTask>
+
+        <sequenceFlow id="flowToCompleted" sourceRef="finalizeSignature" targetRef="completed" />
+
+        <userTask id="completed" name="Signature Completed"
+            activiti:formKey="sg:signatureCompletedTask">
+            <documentation>The document has been signed by all required users.</documentation>
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="script">
+                        <activiti:string><![CDATA[
+                            if (typeof bpm_workflowDueDate != 'undefined') task.dueDate = bpm_workflowDueDate;
+                            if (typeof bpm_workflowPriority != 'undefined') task.priority = bpm_workflowPriority;
+                        ]]></activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+            <humanPerformer>
+                <resourceAssignmentExpression>
+                    <formalExpression>${initiator.properties.userName}</formalExpression>
+                </resourceAssignmentExpression>
+            </humanPerformer>
+        </userTask>
+
+        <sequenceFlow id="flowToEndFromCompleted" sourceRef="completed" targetRef="end" />
+
+        <userTask id="rejected" name="Signature Rejected"
+            activiti:formKey="sg:signatureRejectedTask">
+            <documentation>The document signature was rejected by one of the signatories.</documentation>
+            <extensionElements>
+                <activiti:taskListener event="create" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
+                    <activiti:field name="script">
+                        <activiti:string><![CDATA[
+                            if (typeof bpm_workflowDueDate != 'undefined') task.dueDate = bpm_workflowDueDate;
+                            if (typeof bpm_workflowPriority != 'undefined') task.priority = bpm_workflowPriority;
+                        ]]></activiti:string>
+                    </activiti:field>
+                </activiti:taskListener>
+            </extensionElements>
+            <humanPerformer>
+                <resourceAssignmentExpression>
+                    <formalExpression>${initiator.properties.userName}</formalExpression>
+                </resourceAssignmentExpression>
+            </humanPerformer>
+        </userTask>
+
+        <sequenceFlow id="flowToEndFromRejected" sourceRef="rejected" targetRef="end" />
+
+        <endEvent id="end" />
+
+    </process>
+
+    <bpmndi:BPMNDiagram id="BPMNDiagram_multiSignatureWorkflow">
+        <bpmndi:BPMNPlane bpmnElement="multiSignatureWorkflow" id="BPMNPlane_multiSignatureWorkflow">
+            <bpmndi:BPMNShape bpmnElement="start" id="BPMNShape_start">
+                <omgdc:Bounds height="35" width="35" x="30" y="200"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="signTask" id="BPMNShape_signTask">
+                <omgdc:Bounds height="55" width="105" x="125" y="190"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="signatureDecision" id="BPMNShape_signatureDecision">
+                <omgdc:Bounds height="40" width="40" x="290" y="197"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="finalizeSignature" id="BPMNShape_finalizeSignature">
+                <omgdc:Bounds height="55" width="105" x="390" y="97"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="completed" id="BPMNShape_completed">
+                <omgdc:Bounds height="55" width="105" x="555" y="97"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="rejected" id="BPMNShape_rejected">
+                <omgdc:Bounds height="55" width="105" x="390" y="297"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+            <bpmndi:BPMNShape bpmnElement="end" id="BPMNShape_end">
+                <omgdc:Bounds height="35" width="35" x="730" y="307"></omgdc:Bounds>
+            </bpmndi:BPMNShape>
+        </bpmndi:BPMNPlane>
+    </bpmndi:BPMNDiagram>
+
+</definitions>

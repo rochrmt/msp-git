@@ -1,0 +1,14 @@
+<webscript>
+   <shortname>AOS Authentication Success</shortname>
+   <description>
+   <![CDATA[
+   The AOS Token Consumer redirects to the AOS Success URI after successful authentication
+   http://<host>:<port>/alfresco/service/aos/authenticate-response-success
+   ]]>
+   </description>
+   <url>/aos/authenticate-response-success</url>
+   <format default="html"></format>
+   <authentication>none</authentication>
+   <transaction>required</transaction>
+   <lifecycle>internal</lifecycle>
+</webscript>

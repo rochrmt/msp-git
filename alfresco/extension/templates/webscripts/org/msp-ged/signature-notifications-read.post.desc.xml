@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>Mark Signature Notifications Read</shortname>
+    <description>Marks signature notifications as read (sg:notificationRead=true). Params: ids=nodeRef1,nodeRef2 or all=true</description>
+    <url>/msp-ged/signature-notifications-read</url>
+    <format default="json">argument</format>
+    <authentication>user</authentication>
+    <transaction>required</transaction>
+</webscript>

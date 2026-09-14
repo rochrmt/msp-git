@@ -1,0 +1,15 @@
+# Données (jamais dans git)
+data/
+logs/
+
+# Secrets
+.env
+config/nginx.htpasswd
+
+# Docker
+*.tgz
+*.tar.gz
+
+# OS
+.DS_Store
+Thumbs.db

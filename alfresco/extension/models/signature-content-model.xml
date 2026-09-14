@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="sg:signaturemodel" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+    <description>Multi-Signature Workflow Model</description>
+    <author>MSP-GED</author>
+    <version>2.0</version>
+
+    <imports>
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d"/>
+        <import uri="http://www.alfresco.org/model/bpm/1.0" prefix="bpm"/>
+    </imports>
+
+    <namespaces>
+        <namespace uri="http://www.msp-ged.org/model/signature/1.0" prefix="sg"/>
+    </namespaces>
+
+    <types>
+        <type name="sg:submitSignatureTask">
+            <parent>bpm:startTask</parent>
+            <mandatory-aspects>
+                <aspect>bpm:assignees</aspect>
+            </mandatory-aspects>
+        </type>
+
+        <type name="sg:signTask">
+            <parent>bpm:activitiOutcomeTask</parent>
+            <properties>
+                <property name="sg:signOutcome">
+                    <type>d:text</type>
+                    <default>Sign</default>
+                    <constraints>
+                        <constraint name="sg:signOutcomeOptions" type="LIST">
+                            <parameter name="allowedValues">
+                                <list>
+                                    <value>Sign</value>
+                                    <value>Reject</value>
+                                </list>
+                            </parameter>
+                        </constraint>
+                    </constraints>
+                </property>
+            </properties>
+            <overrides>
+                <property name="bpm:packageItemActionGroup">
+                    <default>edit_package_item_actions</default>
+                </property>
+                <property name="bpm:outcomePropertyName">
+                    <default>sg:signOutcome</default>
+                </property>
+            </overrides>
+        </type>
+
+        <type name="sg:signatureCompletedTask">
+            <parent>bpm:workflowTask</parent>
+        </type>
+
+        <type name="sg:signatureRejectedTask">
+            <parent>bpm:workflowTask</parent>
+        </type>
+    </types>
+
+    <aspects>
+        <aspect name="sg:signature">
+            <title>Signature Metadata</title>
+            <properties>
+                <property name="sg:signatories">
+                    <title>Signatories</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                    <multiple>true</multiple>
+                </property>
+                <property name="sg:signatureDate">
+                    <title>Signature Date</title>
+                    <type>d:datetime</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:documentHash">
+                    <title>Document Hash (SHA-256)</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:signatureStatus">
+                    <title>Signature Status</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                    <default>PENDING</default>
+                    <constraints>
+                        <constraint name="sg:signatureStatusOptions" type="LIST">
+                            <parameter name="allowedValues">
+                                <list>
+                                    <value>PENDING</value>
+                                    <value>SIGNED</value>
+                                    <value>REJECTED</value>
+                                </list>
+                            </parameter>
+                        </constraint>
+                    </constraints>
+                </property>
+                <property name="sg:signCount">
+                    <title>Number of Signatures</title>
+                    <type>d:int</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:rejectedBy">
+                    <title>Rejected By</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:rejectionDate">
+                    <title>Rejection Date</title>
+                    <type>d:datetime</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:rejectionComment">
+                    <title>Rejection Comment</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:initiatedBy">
+                    <title>Workflow Initiated By</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+            </properties>
+        </aspect>
+
+        <aspect name="sg:notification">
+            <title>Signature Notification</title>
+            <properties>
+                <property name="sg:recipient">
+                    <title>Recipient</title>
+                    <type>d:text</type>
+                </property>
+                <property name="sg:eventType">
+                    <title>Event Type</title>
+                    <type>d:text</type>
+                    <constraints>
+                        <constraint name="sg:eventTypeOptions" type="LIST">
+                            <parameter name="allowedValues">
+                                <list>
+                                    <value>ASSIGNMENT</value>
+                                    <value>SIGNED</value>
+                                    <value>REJECTED</value>
+                                    <value>COMPLETED</value>
+                                </list>
+                            </parameter>
+                        </constraint>
+                    </constraints>
+                </property>
+                <property name="sg:notificationDocumentName">
+                    <title>Document Name</title>
+                    <type>d:text</type>
+                </property>
+                <property name="sg:signerName">
+                    <title>Signer Name</title>
+                    <type>d:text</type>
+                </property>
+                <property name="sg:workflowId">
+                    <title>Workflow ID</title>
+                    <type>d:text</type>
+                </property>
+                <property name="sg:notificationRead">
+                    <title>Read</title>
+                    <type>d:boolean</type>
+                    <default>false</default>
+                </property>
+                <property name="sg:notificationDate">
+                    <title>Notification Date</title>
+                    <type>d:datetime</type>
+                </property>
+                <property name="sg:documentNodeRef">
+                    <title>Document NodeRef</title>
+                    <type>d:text</type>
+                </property>
+                <property name="sg:taskId">
+                    <title>Task ID</title>
+                    <type>d:text</type>
+                </property>
+            </properties>
+        </aspect>
+    </aspects>
+
+</model>
