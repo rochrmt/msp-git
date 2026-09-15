@@ -1,5 +1,5 @@
 /**
- * Signature notifications for Alfresco Share
+ * Signature notifications for MSP-GED
  * Polls signature events and shows toast/bell notifications
  * Event types: ASSIGNMENT, SIGNED, REJECTED, COMPLETED
  * Read state is persisted server-side (sg:notificationRead)

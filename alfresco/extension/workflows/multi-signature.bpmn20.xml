@@ -96,7 +96,7 @@
                                                     "ACTION REQUISE:\n" +
                                                     "--------------\n" +
                                                     "Vous devez examiner le document puis le SIGNER ou le REJETER.\n\n" +
-                                                    "Pour accéder à la tâche, connectez-vous à Alfresco Share:\n" +
+                                                    "Pour accéder à la tâche, connectez-vous à MSP-GED:\n" +
                                                     "http://localhost/share/page/task-edit?taskId=activiti$" + taskId + "\n\n" +
                                                     "Cordialement,\n" +
                                                     "Système de signature MSP-GED";
@@ -208,7 +208,7 @@
                                                         "STATUT DU WORKFLOW:\n" +
                                                         "-------------------\n" +
                                                         "Le workflow a été interrompu. Le document n'a pas été signé.\n\n" +
-                                                        "Pour consulter le document, connectez-vous à Alfresco:\n" +
+                                                        "Pour consulter le document, connectez-vous à MSP-GED:\n" +
                                                         "http://localhost/share/\n\n" +
                                                         "Cordialement,\n" +
                                                         "Système de signature MSP-GED";
@@ -228,7 +228,7 @@
                                                         body += "Signataires ayant signé: " + signersList.toString() + "\n";
                                                     }
                                                     body += "Le workflow continue avec les signataires restants.\n\n" +
-                                                        "Pour consulter le document, connectez-vous à Alfresco:\n" +
+                                                        "Pour consulter le document, connectez-vous à MSP-GED:\n" +
                                                         "http://localhost/share/\n\n" +
                                                         "Cordialement,\n" +
                                                         "Système de signature MSP-GED";
@@ -435,7 +435,7 @@
                                                 "-------------------\n" +
                                                 "Le document est maintenant marqué comme SIGNÉ.\n" +
                                                 "Un hash SHA-256 a été calculé pour garantir l'intégrité du document.\n\n" +
-                                                "Pour consulter le document et ses métadonnées de signature, connectez-vous à Alfresco:\n" +
+                                                "Pour consulter le document et ses métadonnées de signature, connectez-vous à MSP-GED:\n" +
                                                 "http://localhost/\n\n" +
                                                 "Cordialement,\n" +
                                                 "Système de signature MSP-GED";
