@@ -11,7 +11,7 @@
       <enable-external-users-panel>false</enable-external-users-panel>
    </config>
   <config evaluator="string-compare" condition="DocumentLibrary" >
-    <repository-url>http://localhost:80/alfresco</repository-url>
+    <repository-url>${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/alfresco</repository-url>
   </config>
 
    <!-- ================================================================== -->

@@ -8,6 +8,10 @@ ARG SERVER_NAME
 ENV SERVER_NAME $SERVER_NAME
 ARG HTTP_PORT
 ENV HTTP_PORT $HTTP_PORT
+ARG PROTOCOL=http
+ENV PROTOCOL $PROTOCOL
+ARG SHARE_PORT=80
+ENV SHARE_PORT $SHARE_PORT
 
 # Install modules and addons
 RUN mkdir -p /usr/local/tomcat/amps
@@ -23,9 +27,24 @@ RUN sed -i "s|<Context>|<Context>\n<Resources cacheMaxSize=\"51200\"/> |g" /usr/
 # web-extension complet : share-config-custom-dev.xml, site-webscripts (extensions Surf), site-data (module)
 COPY web-extension/ /usr/local/tomcat/shared/classes/alfresco/web-extension/
 
+# Substitution des variables dans share-config-custom-dev.xml
+RUN sed -i "s|\${PROTOCOL}|${PROTOCOL}|g; s|\${SERVER_NAME}|${SERVER_NAME}|g; s|\${SHARE_PORT}|${SHARE_PORT}|g" \
+    /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom-dev.xml
+
 # Override minimal du head resources (stock 25.2 + script signature)
 COPY site-webscripts/ /usr/local/tomcat/shared/classes/alfresco/web-extension/site-webscripts/
 
 # Asset JS servi via /share/res/components/header/signature-notifications-share.js
 # ("/res/*" de Share resout depuis la racine du webapp, pas un dossier res/ physique)
 COPY web-extension/signature-notifications-share.js /usr/local/tomcat/webapps/share/components/header/signature-notifications-share.js
+
+# Branding MSP-GED : remplacer "Alfresco" par "MSP-GED" dans tous les fichiers de messages
+RUN for f in /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/messages/slingshot*.properties; do \
+      sed -i 's/app.name=Alfresco Share/app.name=MSP-GED/' "$f"; \
+      sed -i 's/app.tagline=Alfresco Content Services/app.tagline=Gestion Electronique de Documents/' "$f"; \
+      sed -i 's/app.community=Alfresco Community Edition/app.community=Ministere de la Sante Publique/' "$f"; \
+      sed -i 's/label.copyright=.*/label.copyright=\&copy; 2025 MSP-GED. Tous droits reserves./' "$f"; \
+      sed -i 's/page.title=Alfresco/page.title=MSP-GED/' "$f"; \
+      sed -i 's|<a href="http://www.alfresco.com">Alfresco Software</a> Inc.|MSP-GED|g' "$f"; \
+      sed -i "s/Alfresco Content Services may not be available/MSP-GED may not be available/" "$f"; \
+    done

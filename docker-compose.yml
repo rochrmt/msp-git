@@ -61,19 +61,19 @@ services:
         -Dindex.subsystem.name=solr6
         -Dsolr.sharedSecret=lin6da04b7h
         -Dalfresco.host=${SERVER_NAME}
-        -Dalfresco.port=80
-        -Dapi-explorer.url=http://${SERVER_NAME}:80/api-explorer
-        -Dalfresco.protocol=http
+        -Dalfresco.port=${SHARE_PORT}
+        -Dapi-explorer.url=${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/api-explorer
+        -Dalfresco.protocol=${PROTOCOL}
         -Dshare.host=${SERVER_NAME}
-        -Dshare.port=80
-        -Dshare.protocol=http
-        -Daos.baseUrlOverwrite=http://${SERVER_NAME}/alfresco/aos
+        -Dshare.port=${SHARE_PORT}
+        -Dshare.protocol=${PROTOCOL}
+        -Daos.baseUrlOverwrite=${PROTOCOL}://${SERVER_NAME}/alfresco/aos
         -Dmessaging.subsystem.autoStart=false
         -Drepo.event2.enabled=false
         -Ddeployment.method=DOCKER_COMPOSE
         -Dcsrf.filter.enabled=false
         -Dopencmis.server.override=true
-        -Dopencmis.server.value=http://${SERVER_NAME}:80
+        -Dopencmis.server.value=${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}
         -DlocalTransform.core-aio.url=http://transform-core-aio:8090/
         -Dhttpclient.config.transform.connectionRequestTimeout=500000
         -Dalfresco.restApi.basicAuthScheme=true
@@ -138,12 +138,14 @@ services:
         SHARE_TAG: ${SHARE_TAG}
         SERVER_NAME: ${SERVER_NAME}
         HTTP_PORT: 80
+        PROTOCOL: ${PROTOCOL}
+        SHARE_PORT: ${SHARE_PORT}
     mem_limit: 1872m
     environment:
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
-      CSRF_FILTER_REFERER: "http://localhost:80/.*"
-      CSRF_FILTER_ORIGIN: "http://localhost:80"
+      CSRF_FILTER_REFERER: "${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/.*"
+      CSRF_FILTER_ORIGIN: "${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}"
       JAVA_OPTS: "
         -Dalfresco.context=alfresco
         -Dalfresco.protocol=http
@@ -201,7 +203,7 @@ services:
     image: alfresco/alfresco-content-app:${ACA_TAG}
     mem_limit: 256m
     environment:
-      APP_BASE_SHARE_URL: "http://${SERVER_NAME}:80/#/preview/s"
+      APP_BASE_SHARE_URL: "${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/#/preview/s"
       APP_CONFIG_PLUGIN_PROCESS_SERVICE: false
     depends_on:
       alfresco:

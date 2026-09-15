@@ -266,35 +266,31 @@ sudo du -sh /home/admin1/alfresco/data/*
 
 ## Étape 5 — Modifier la configuration pour le VPS
 
+La configuration est désormais pilotée par le fichier `.env`. Il suffit de modifier
+3 variables pour passer de `localhost` (local) à `ged-msp.com` (production HTTPS) :
+
 ```bash
 cd /home/msp_ged-deploy-v25
 
-# 5.1 Modifier .env — changer localhost par ged-msp.com
+# 5.1 Modifier .env pour la production HTTPS
 sed -i 's/SERVER_NAME=localhost/SERVER_NAME=ged-msp.com/' .env
+sed -i 's/PROTOCOL=http/PROTOCOL=https/' .env
+sed -i 's/SHARE_PORT=80/SHARE_PORT=443/' .env
 
 # Vérifier
 cat .env
-# → doit afficher SERVER_NAME=ged-msp.com
+# → doit afficher :
+#   SERVER_NAME=ged-msp.com
+#   PROTOCOL=https
+#   SHARE_PORT=443
 ```
 
-```bash
-# 5.2 Modifier share-config-custom-dev.xml — URL du repository
-sed -i 's|http://localhost:80/alfresco|http://ged-msp.com/alfresco|' share/web-extension/share-config-custom-dev.xml
+> **Note** : `share-config-custom-dev.xml` et les filtres CSRF de
+> `docker-compose.yml` utilisent maintenant ces mêmes variables.
+> Plus besoin de `sed` manuel dans ces fichiers — la substitution se fait
+> automatiquement au `docker compose build` (via les `ARG` du Dockerfile Share
+> et les variables `${...}` du fichier Compose).
 
-# Vérifier
-grep "repository-url" share/web-extension/share-config-custom-dev.xml
-# → doit afficher http://ged-msp.com/alfresco
-```
-
-```bash
-# 5.3 Modifier docker-compose.yml — CSRF (localhost → ged-msp.com)
-sed -i 's|http://localhost:80/\.\*|http://ged-msp.com/.*|' docker-compose.yml
-sed -i 's|http://localhost:80"|http://ged-msp.com"|' docker-compose.yml
-
-# Vérifier
-grep "CSRF" docker-compose.yml
-# → doit afficher ged-msp.com
-```
 
 ---
 
@@ -462,11 +458,10 @@ sudo mkdir -p /home/msp_ged-deploy-v25/data
 sudo cp -r /home/admin1/alfresco/data/* /home/msp_ged-deploy-v25/data/
 cd /home/msp_ged-deploy-v25
 
-# === CONFIG (automatique) ===
+# === CONFIG (automatique via .env) ===
 sudo sed -i 's/SERVER_NAME=localhost/SERVER_NAME=ged-msp.com/' .env
-sudo sed -i 's|http://localhost:80/alfresco|http://ged-msp.com/alfresco|' share/web-extension/share-config-custom-dev.xml
-sudo sed -i 's|http://localhost:80/\.\*|http://ged-msp.com/.*|' docker-compose.yml
-sudo sed -i 's|http://localhost:80"|http://ged-msp.com"|' docker-compose.yml
+sudo sed -i 's/PROTOCOL=http/PROTOCOL=https/' .env
+sudo sed -i 's/SHARE_PORT=80/SHARE_PORT=443/' .env
 
 # === BUILD + START ===
 sudo docker compose build alfresco share solr6
@@ -493,9 +488,7 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/alfresco/api/-defau
 - [ ] Ancienne appli arrêtée
 - [ ] Nouveau dossier transféré sur le VPS
 - [ ] Données de production copiées dans le nouveau dossier
-- [ ] `.env` modifié (SERVER_NAME=ged-msp.com)
-- [ ] `share-config-custom-dev.xml` modifié (URL repository)
-- [ ] `docker-compose.yml` CSRF modifié (localhost → ged-msp.com)
+- [ ] `.env` modifié (SERVER_NAME=ged-msp.com, PROTOCOL=https, SHARE_PORT=443)
 - [ ] Images buildées
 - [ ] Stack démarrée
 - [ ] Alfresco "started" dans les logs
@@ -510,3 +503,74 @@ curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/alfresco/api/-defau
 - [ ] Mot de passe Gmail SMTP changé
 - [ ] Test de login avec un utilisateur normal
 - [ ] Test de partage visible par un autre utilisateur
+
+---
+
+## Édition de documents Microsoft Office (AOS)
+
+### Principe
+
+AOS (Alfresco Office Services) expose le dépôt via le protocole WebDAV/SharePoint.
+Quand un utilisateur clique sur "Modifier dans Microsoft Office" dans Share ou ACA,
+le navigateur lance l'URL `ms-word:ofe|u|<URL_AOS>` qui ouvre Word/Excel/PowerPoint
+avec le fichier attaché. Les modifications sont sauvegardées directement dans Alfresco.
+
+### Configuration
+
+L'URL AOS est pilotée par `.env` :
+
+| Variable | Local | Production |
+|---|---|---|
+| `SERVER_NAME` | `localhost` | `ged-msp.com` |
+| `PROTOCOL` | `http` | `https` |
+| `SHARE_PORT` | `80` | `443` |
+
+L'URL générée est : `${PROTOCOL}://${SERVER_NAME}/alfresco/aos/...`
+
+En production : `https://ged-msp.com/alfresco/aos/Shared/document.docx`
+
+### Vérification côté serveur
+
+```bash
+# Le module AOS doit être INSTALLED
+curl -s "http://localhost:8080/alfresco/api/-default-/public/alfresco/versions/1/modules" \
+  -u admin:<MOT_DE_PASSE> | grep -A2 alfresco-aos
+
+# PROPFIND doit retourner 207
+curl -u admin:<MOT_DE_PASSE> -X PROPFIND \
+  "http://localhost:8080/alfresco/aos/Shared/" \
+  -H "Depth: 1" -o /dev/null -w "%{http_code}\n"
+# → 207
+```
+
+### Côté poste utilisateur (Windows)
+
+Office refuse par défaut l'authentification Basic sur HTTP (sans SSL).
+En production avec HTTPS, aucun réglage n'est nécessaire.
+
+Pour tester en **local sur HTTP**, ajouter la clé de registre suivante
+(PowerShell en tant qu'utilisateur courant) :
+
+```powershell
+# Office 2016/365 (16.0) et 2013 (15.0)
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Office\16.0\Common\Internet" `
+  -Name "BasicAuthLevel" -Value 2 -PropertyType DWORD -Force
+New-ItemProperty -Path "HKCU:\Software\Microsoft\Office\15.0\Common\Internet" `
+  -Name "BasicAuthLevel" -Value 2 -PropertyType DWORD -Force
+```
+
+Puis fermer complètement Word et relancer l'édition depuis Share/ACA.
+Une boîte de dialogue demande l'identifiant/mot de passe Alfresco.
+
+### Fallback : WebDAV
+
+Si le protocole `ms-word:` ne fonctionne pas (navigateur qui bloque, plugin
+manquant), monter le dépôt comme lecteur réseau :
+
+1. Explorateur Windows → "Ce PC" → "Connecter un lecteur réseau"
+2. Dossier : `\\ged-msp.com@SSL\alfresco\webdav` (production)
+   ou `http://localhost\alfresco\webdav` (local)
+3. Cocher "Se connecter avec des données d'identification différentes"
+4. Entrer les identifiants MSP-GED
+5. Ouvrir les documents directement depuis ce lecteur
+
