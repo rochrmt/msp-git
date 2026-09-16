@@ -169,5 +169,5 @@
 
 <@markup id="resources">
    <#-- Use this "markup id" to add in a extension's resources -->
-   <script type="text/javascript" src="${url.context}/res/components/header/signature-notifications-share.js?v=7"></script>
+   <script type="text/javascript" src="${url.context}/res/components/header/signature-notifications-share.js?v=8"></script>
 </@>

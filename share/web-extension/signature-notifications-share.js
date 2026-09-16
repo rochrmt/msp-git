@@ -7,7 +7,7 @@
 (function() {
     'use strict';
 
-    console.log('[SG Share] v7 loaded - read/unread + auto-consult');
+    console.log('[SG Share] v8 loaded - CSRF fix + deferred nav');
 
     var POLL_INTERVAL = 15000;
     var WEBSPI_URL = '/share/proxy/alfresco/msp-ged/signature-notifications';
@@ -137,17 +137,19 @@
                 '</div></div>';
 
             item.addEventListener('click', function() {
-                markRead([n.nodeId]);
                 notifications = notifications.filter(function(x) { return x.nodeId !== n.nodeId; });
                 updateBadge(notifications.length);
-                if (n.eventType === 'ASSIGNMENT' && n.taskId) {
-                    window.location.href = '/share/page/task-edit?taskId=activiti$' + encodeURIComponent(n.taskId);
-                } else if (n.documentNodeRef) {
-                    window.location.href = '/share/page/document-details?nodeRef=' + encodeURIComponent(n.documentNodeRef);
-                } else {
-                    window.location.href = '/share/page/my-tasks#filter=workflows|active';
-                }
                 if (dropdown) dropdown.style.display = 'none';
+                var target;
+                if (n.eventType === 'ASSIGNMENT' && n.taskId) {
+                    target = '/share/page/task-edit?taskId=activiti$' + encodeURIComponent(n.taskId);
+                } else if (n.documentNodeRef) {
+                    target = '/share/page/document-details?nodeRef=' + encodeURIComponent(n.documentNodeRef);
+                } else {
+                    target = '/share/page/my-tasks#filter=workflows|active';
+                }
+                // wait for the mark-read POST before navigating
+                markRead([n.nodeId], function() { window.location.href = target; });
             });
 
             list.appendChild(item);
@@ -186,15 +188,29 @@
         return unreadList.filter(function(n) { return !marked[n.nodeId]; });
     }
 
-    // Persist read state on the repo (fire and forget)
-    function markRead(nodeIds) {
-        if (!nodeIds || nodeIds.length === 0) return;
+    // Share's CSRF filter rejects proxy POSTs without this header
+    function getCsrfToken() {
+        var m = document.cookie.match(/Alfresco-CSRFToken=([^;]+)/);
+        return m ? decodeURIComponent(m[1]) : '';
+    }
+
+    // Persist read state on the repo; calls done() once the POST finished
+    // (or after a short timeout) so navigation doesn't abort the request
+    function markRead(nodeIds, done) {
+        if (!nodeIds || nodeIds.length === 0) { if (done) done(); return; }
         try {
             var xhr = new XMLHttpRequest();
             xhr.open('POST', READ_URL + '?ids=' + encodeURIComponent(nodeIds.join(',')), true);
             xhr.withCredentials = true;
+            xhr.setRequestHeader('Alfresco-CSRFToken', getCsrfToken());
+            if (done) {
+                var finished = false;
+                var finish = function() { if (!finished) { finished = true; done(); } };
+                xhr.onreadystatechange = function() { if (xhr.readyState === 4) finish(); };
+                setTimeout(finish, 1500);
+            }
             xhr.send();
-        } catch (e) { /* silent */ }
+        } catch (e) { if (done) done(); }
     }
 
     function markAllRead() {
@@ -202,6 +218,7 @@
             var xhr = new XMLHttpRequest();
             xhr.open('POST', READ_URL + '?all=true', true);
             xhr.withCredentials = true;
+            xhr.setRequestHeader('Alfresco-CSRFToken', getCsrfToken());
             xhr.send();
         } catch (e) { /* silent */ }
         notifications = [];
@@ -273,21 +290,22 @@
         toast.innerHTML = '<strong style="color:' + info.color + ';">' + info.icon + ' ' + info.title + '</strong><br>' + escapeHtml(msg);
 
         toast.addEventListener('click', function() {
-            markRead([n.nodeId]);
+            var target;
             if (n.eventType === 'ASSIGNMENT' && n.taskId) {
-                window.location.href = '/share/page/task-edit?taskId=activiti$' + encodeURIComponent(n.taskId);
+                target = '/share/page/task-edit?taskId=activiti$' + encodeURIComponent(n.taskId);
             } else if (n.documentNodeRef) {
-                window.location.href = '/share/page/document-details?nodeRef=' + encodeURIComponent(n.documentNodeRef);
+                target = '/share/page/document-details?nodeRef=' + encodeURIComponent(n.documentNodeRef);
             } else {
-                window.location.href = '/share/page/my-tasks#filter=workflows|active';
+                target = '/share/page/my-tasks#filter=workflows|active';
             }
             toast.remove();
+            markRead([n.nodeId], function() { window.location.href = target; });
         });
 
         document.body.appendChild(toast);
         setTimeout(function() {
             if (toast.parentElement) toast.remove();
-        }, 8000);
+        }, 12000);
     }
 
     function init() {

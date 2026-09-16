@@ -67,16 +67,16 @@
 
                                         function fullName(u) {
                                             try {
-                                                var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
-                                                if (p && p.length > 0) {
-                                                    var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                var p = people.getPerson(u);
+                                                if (p != null) {
+                                                    var fn = ((p.properties.firstName || '') + ' ' + (p.properties.lastName || '')).trim();
                                                     if (fn != '') return fn;
                                                 }
                                             } catch(e) {}
                                             return u;
                                         }
 
-                                        var notif = notifFolder.createNode("notif-" + recipient + "-" + Date.now(), "cm:content");
+                                        var notif = notifFolder.createNode("notif-" + recipient + "-" + Date.now(), "sg:notificationRecord");
                                         notif.addAspect("sg:notification");
                                         notif.properties["sg:recipient"] = recipient;
                                         notif.properties["sg:eventType"] = "ASSIGNMENT";
@@ -91,16 +91,15 @@
 
                                         // Send email notification
                                         try {
-                                            var personService = companyhome.childrenByXPath("*[@cm:userName='" + recipient + "']")[0];
-                                            var email = personService.properties.email;
+                                            var personService = people.getPerson(recipient);
+                                            var email = (personService != null) ? personService.properties.email : null;
                                             if (email && email.length > 0) {
                                                 var initiatorName = fullName(execution.getVariable('wf_initiatedBy'));
-                                                var recipientName = fullName(recipient);
                                                 var mailAction = actions.create("mail");
                                                 mailAction.parameters["to"] = email;
                                                 mailAction.parameters["subject"] = "[MSP-GED] " + initiatorName + " vous demande de signer : " + docName;
-                                                mailAction.parameters["text"] = "Bonjour " + recipientName + ",\n\n" +
-                                                    "Vous recevez ce message car " + initiatorName + " vous a demandé de signer un document sur la plateforme MSP-GED.\n\n" +
+                                                mailAction.parameters["text"] = "Bonjour,\n\n" +
+                                                    "Une tâche vous a été assignée de la part de " + initiatorName + " : signature du document « " + docName + " ».\n\n" +
                                                     "DÉTAILS DE LA DEMANDE :\n" +
                                                     "------------------------\n" +
                                                     "Document à signer : " + docName + "\n" +
@@ -188,16 +187,16 @@
 
                                         function fullName(u) {
                                             try {
-                                                var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
-                                                if (p && p.length > 0) {
-                                                    var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                var p = people.getPerson(u);
+                                                if (p != null) {
+                                                    var fn = ((p.properties.firstName || '') + ' ' + (p.properties.lastName || '')).trim();
                                                     if (fn != '') return fn;
                                                 }
                                             } catch(e) {}
                                             return u;
                                         }
 
-                                        var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + Date.now(), "cm:content");
+                                        var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + Date.now(), "sg:notificationRecord");
                                         notif.addAspect("sg:notification");
                                         notif.properties["sg:recipient"] = initiatedBy;
                                         notif.properties["sg:eventType"] = eventType;
@@ -211,17 +210,16 @@
 
                                         // Send email notification to initiator
                                         try {
-                                            var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
-                                            var email = personNode.properties.email;
+                                            var personNode = people.getPerson(initiatedBy);
+                                            var email = (personNode != null) ? personNode.properties.email : null;
                                             if (email && email.length > 0) {
                                                 var signerName = fullName(currentSigner);
-                                                var initiatorName = fullName(initiatedBy);
                                                 var subject = '';
                                                 var body = '';
                                                 if (outcome == 'Reject') {
                                                     subject = "[MSP-GED] " + signerName + " a rejeté : " + docName;
-                                                    body = "Bonjour " + initiatorName + ",\n\n" +
-                                                        "Vous recevez ce message car " + signerName + " a REJETÉ le document que vous aviez soumis à la signature.\n\n" +
+                                                    body = "Bonjour,\n\n" +
+                                                        "Nous voulons vous prévenir que " + signerName + " a REJETÉ le document « " + docName + " » que vous aviez soumis à la signature.\n\n" +
                                                         "DÉTAILS DU REJET:\n" +
                                                         "-----------------\n" +
                                                         "Document  : " + docName + "\n" +
@@ -242,8 +240,8 @@
                                                         "(message envoyé automatiquement via MSP-GED)";
                                                 } else {
                                                     subject = "[MSP-GED] " + signerName + " a signé : " + docName;
-                                                    body = "Bonjour " + initiatorName + ",\n\n" +
-                                                        "Vous recevez ce message car " + signerName + " vient de SIGNER le document que vous aviez soumis à la signature.\n\n" +
+                                                    body = "Bonjour,\n\n" +
+                                                        "Nous voulons vous prévenir que " + signerName + " vient de SIGNER le document « " + docName + " » que vous aviez soumis à la signature.\n\n" +
                                                         "DÉTAILS DE LA SIGNATURE:\n" +
                                                         "------------------------\n" +
                                                         "Document : " + docName + "\n" +
@@ -418,7 +416,7 @@
                             }
 
                             // Create COMPLETED notification to initiator
-                            var dict = companyhome.childByNamePath("Data Dictionary");
+                            var dict = companyhome.childByNamePath("Shared");
                             if (dict != null) {
                                 var notifFolder = dict.childByNamePath("Signature Notifications");
                                 if (notifFolder == null) {
@@ -431,7 +429,7 @@
                                         docName = children[0].name;
                                         docRef = children[0].nodeRef.toString();
                                     }
-                                    var notif = notifFolder.createNode("notif-completed-" + initiatedBy + "-" + Date.now(), "cm:content");
+                                    var notif = notifFolder.createNode("notif-completed-" + initiatedBy + "-" + Date.now(), "sg:notificationRecord");
                                     notif.addAspect("sg:notification");
                                     notif.properties["sg:recipient"] = initiatedBy;
                                     notif.properties["sg:eventType"] = "COMPLETED";
@@ -445,14 +443,14 @@
 
                                     // Send email notification to initiator
                                     try {
-                                        var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
-                                        var email = personNode.properties.email;
+                                        var personNode = people.getPerson(initiatedBy);
+                                        var email = (personNode != null) ? personNode.properties.email : null;
                                         if (email && email.length > 0) {
                                             function fullName(u) {
                                                 try {
-                                                    var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
-                                                    if (p && p.length > 0) {
-                                                        var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                    var p = people.getPerson(u);
+                                                    if (p != null) {
+                                                        var fn = ((p.properties.firstName || '') + ' ' + (p.properties.lastName || '')).trim();
                                                         if (fn != '') return fn;
                                                     }
                                                 } catch(e) {}
@@ -466,8 +464,8 @@
                                             var mailAction = actions.create("mail");
                                             mailAction.parameters["to"] = email;
                                             mailAction.parameters["subject"] = "[MSP-GED] Signature terminée : " + docName;
-                                            mailAction.parameters["text"] = "Bonjour " + initiatorName + ",\n\n" +
-                                                "Vous recevez ce message car le workflow de signature que vous avez initié est maintenant TERMINÉ : tous les signataires ont signé le document.\n\n" +
+                                            mailAction.parameters["text"] = "Bonjour,\n\n" +
+                                                "Nous voulons vous prévenir que le workflow de signature que vous avez initié est maintenant TERMINÉ : tous les signataires ont signé le document.\n\n" +
                                                 "RÉCAPITULATIF:\n" +
                                                 "--------------\n" +
                                                 "Document  : " + docName + "\n" +

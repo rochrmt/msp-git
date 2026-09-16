@@ -21,13 +21,6 @@
       <#assign senderName = "">
    </#attempt>
    <#if senderName == ""><#assign senderName = "MSP-GED — Ministère de la Santé et de la Population"></#if>
-   <#attempt>
-      <#assign recipientName = (person.properties["cm:firstName"]!"")>
-   <#recover>
-      <#assign recipientName = "">
-   </#attempt>
-   <#if recipientName == ""><#assign recipientName = ""></#if>
-
    <body bgcolor="#dddddd">
       <table width="100%" cellpadding="20" cellspacing="0" border="0" bgcolor="#dddddd">
          <tr>
@@ -61,7 +54,7 @@
                                              </tr>
                                           </table>
                                           <div style="font-size: 14px; margin: 12px 0px 24px 0px; padding-top: 10px; border-top: 1px solid #aaaaaa;">
-                                             <p>Bonjour<#if recipientName != ""> ${recipientName}</#if>,</p>
+                                             <p>Bonjour,</p>
 
                                              <p>
                                                 <#if senderName != "">

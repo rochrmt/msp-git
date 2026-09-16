@@ -8,6 +8,7 @@
     <imports>
         <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d"/>
         <import uri="http://www.alfresco.org/model/bpm/1.0" prefix="bpm"/>
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm"/>
     </imports>
 
     <namespaces>
@@ -56,6 +57,15 @@
 
         <type name="sg:signatureRejectedTask">
             <parent>bpm:workflowTask</parent>
+        </type>
+
+        <!-- Notification records are not cm:content so they never appear in document listings -->
+        <type name="sg:notificationRecord">
+            <title>Signature Notification Record</title>
+            <parent>cm:cmobject</parent>
+            <mandatory-aspects>
+                <aspect>sg:notification</aspect>
+            </mandatory-aspects>
         </type>
     </types>
 
