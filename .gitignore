@@ -5,6 +5,7 @@ logs/
 # Secrets
 .env
 config/nginx.htpasswd
+traefik/letsencrypt/
 
 # Docker
 *.tgz

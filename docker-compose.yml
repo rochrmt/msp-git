@@ -21,6 +21,8 @@ services:
       retries: 5
     volumes:
       - ./data/postgres-data:/var/lib/postgresql/data
+    networks:
+      - webproxy
     restart: unless-stopped
 
 
@@ -51,7 +53,6 @@ services:
         -Ddb.password=alfresco
         -Ddb.driver=org.postgresql.Driver
         -Ddb.url=jdbc:postgresql://postgres:5432/alfresco
-        -Dalfresco_user_store.adminpassword=209c6174da490caeb422f3fa5a7ae634
         -Dsystem.preferred.password.encoding=bcrypt10
         -Dsolr.host=solr6
         -Dsolr.port=8983
@@ -105,6 +106,14 @@ services:
       - ./data/alf-repo-data:/usr/local/tomcat/alf_data
       - ./logs/alfresco:/usr/local/tomcat/logs
       - ./alfresco.svg:/usr/local/tomcat/webapps/api-explorer/images/logo.svg
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.alfresco.rule=PathPrefix(`/alfresco`)"
+      - "traefik.http.routers.alfresco.entrypoints=web,websecure"
+      - "traefik.http.routers.alfresco.tls.certresolver=letsencrypt"
+      - "traefik.http.services.alfresco.loadbalancer.server.port=8080"
+    networks:
+      - webproxy
     healthcheck:
       test:
         - CMD
@@ -129,6 +138,8 @@ services:
         -Dlogging.level.org.alfresco.transform.common.TransformerDebug=ERROR
         -Dlogging.level.org.alfresco.transform=ERROR
       "
+    networks:
+      - webproxy
     restart: unless-stopped
 
 
@@ -145,8 +156,8 @@ services:
     environment:
       REPO_HOST: "alfresco"
       REPO_PORT: "8080"
-      CSRF_FILTER_REFERER: "${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/.*"
-      CSRF_FILTER_ORIGIN: "${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}"
+      CSRF_FILTER_REFERER: "${PROTOCOL}://${SERVER_NAME}/.*"
+      CSRF_FILTER_ORIGIN: "${PROTOCOL}://${SERVER_NAME}"
       JAVA_OPTS: "
         -Dalfresco.context=alfresco
         -Dalfresco.protocol=http
@@ -182,6 +193,14 @@ services:
       - ./about-bg-msp.png:/usr/local/tomcat/webapps/share/modules/images/about-bg-vanilla.png
       - ./transparent.png:/usr/local/tomcat/webapps/share/components/images/simple+smart-medium.png
       - ./logo-msp.ico:/usr/local/tomcat/webapps/share/favicon.ico
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.share.rule=PathPrefix(`/share`)"
+      - "traefik.http.routers.share.entrypoints=web,websecure"
+      - "traefik.http.routers.share.tls.certresolver=letsencrypt"
+      - "traefik.http.services.share.loadbalancer.server.port=8080"
+    networks:
+      - webproxy
     restart: unless-stopped
 
 
@@ -212,6 +231,8 @@ services:
         condition: service_healthy
     volumes:
       - ./data/solr-data:/opt/alfresco-search-services/data
+    networks:
+      - webproxy
     restart: unless-stopped
 
 
@@ -235,19 +256,30 @@ services:
       - ./alfresco.svg:/usr/share/nginx/html/assets/images/app-logo.svg
       - ./logo.png:/usr/share/nginx/html/assets/images/logo.png
       - ./logo-msp.ico:/usr/share/nginx/html/assets/favicon-96x96.png
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.content-app.rule=PathPrefix(`/`)"
+      - "traefik.http.routers.content-app.entrypoints=web,websecure"
+      - "traefik.http.routers.content-app.tls.certresolver=letsencrypt"
+      - "traefik.http.services.content-app.loadbalancer.server.port=8080"
+    networks:
+      - webproxy
 
-
-  proxy:
-    image: nginx:stable-alpine
-    mem_limit: 128m
-    depends_on:
-      - alfresco
-      - solr6
-      - share
-      - content-app
-    volumes:
-      - ./config/nginx.conf:/etc/nginx/nginx.conf
-      - ./config/nginx.htpasswd:/etc/nginx/conf.d/nginx.htpasswd
+  traefik:
+    image: traefik:v2.11
+    container_name: traefik
+    mem_limit: 256m
+    restart: always
     ports:
-      - ${BIND_IP_NGINX:-0.0.0.0}:80:80
-    restart: unless-stopped
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - ./traefik/letsencrypt:/letsencrypt
+    networks:
+      - webproxy
+
+networks:
+  webproxy:
+    driver: bridge
