@@ -101,6 +101,7 @@ services:
       - ./alfresco/extension/templates:/usr/local/tomcat/webapps/alfresco/WEB-INF/classes/alfresco/extension/templates
       - ./alfresco/extension/bootstrap:/usr/local/tomcat/webapps/alfresco/WEB-INF/classes/alfresco/extension/bootstrap
       - ./alfresco/extension/messages:/usr/local/tomcat/webapps/alfresco/WEB-INF/classes/alfresco/extension/messages
+      - ./alfresco/extension/email-templates:/usr/local/tomcat/webapps/alfresco/WEB-INF/classes/alfresco/extension/email-templates
       - ./data/alf-repo-data:/usr/local/tomcat/alf_data
       - ./logs/alfresco:/usr/local/tomcat/logs
       - ./alfresco.svg:/usr/local/tomcat/webapps/api-explorer/images/logo.svg
@@ -165,6 +166,21 @@ services:
       - ./alfresco.svg:/usr/local/tomcat/webapps/share/themes/greenTheme/images/alfresco.svg
       - ./alfresco.svg:/usr/local/tomcat/webapps/share/themes/gdocs/images/alfresco.svg
       - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/lightTheme/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/lightTheme/images/app-logo.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/default/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/default/images/app-logo.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/yellowTheme/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/yellowTheme/images/app-logo.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/greyTheme/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/greyTheme/images/app-logo.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/greenTheme/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/greenTheme/images/app-logo.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/gdocs/images/app-logo-48.png
+      - ./alfresco-48.png:/usr/local/tomcat/webapps/share/themes/gdocs/images/app-logo.png
+      - ./alfresco-48-white.png:/usr/local/tomcat/webapps/share/themes/hcBlack/images/app-logo-48.png
+      - ./alfresco-48-white.png:/usr/local/tomcat/webapps/share/themes/hcBlack/images/app-logo.png
+      - ./about-bg-msp.png:/usr/local/tomcat/webapps/share/modules/images/about-bg-vanilla.png
+      - ./transparent.png:/usr/local/tomcat/webapps/share/components/images/simple+smart-medium.png
       - ./logo-msp.ico:/usr/local/tomcat/webapps/share/favicon.ico
     restart: unless-stopped
 
@@ -215,10 +231,10 @@ services:
       - ./content-app/signature-notifications.js:/usr/share/nginx/html/signature-notifications.js
       - ./alfresco.svg:/usr/share/nginx/html/assets/images/alfresco-logo-flower.svg
       - ./alfresco.svg:/usr/share/nginx/html/assets/images/alfresco-logo.svg
-      - ./alfresco.svg:/usr/share/nginx/html/assets/images/alfresco-logo-white.svg
+      - ./alfresco-white.svg:/usr/share/nginx/html/assets/images/alfresco-logo-white.svg
       - ./alfresco.svg:/usr/share/nginx/html/assets/images/app-logo.svg
       - ./logo.png:/usr/share/nginx/html/assets/images/logo.png
-      - ./logo-msp.ico:/usr/share/nginx/html/favicon-96x96.png
+      - ./logo-msp.ico:/usr/share/nginx/html/assets/favicon-96x96.png
 
 
   proxy:

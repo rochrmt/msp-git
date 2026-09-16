@@ -42,8 +42,8 @@ COPY web-extension/signature-notifications-share.js /usr/local/tomcat/webapps/sh
 RUN for f in /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/messages/slingshot*.properties; do \
       sed -i 's/app.name=Alfresco Share/app.name=MSP-GED/' "$f"; \
       sed -i 's/app.tagline=Alfresco Content Services/app.tagline=Gestion Electronique de Documents/' "$f"; \
-      sed -i 's/app.community=Alfresco Community Edition/app.community=Ministere de la Sante Publique/' "$f"; \
-      sed -i 's/label.copyright=.*/label.copyright=\&copy; 2025 MSP-GED. Tous droits reserves./' "$f"; \
+      sed -i 's/app.community=Alfresco Community Edition/app.community=Ministere de la Sante et de la Population/' "$f"; \
+      sed -i 's/label.copyright=.*/label.copyright=\&copy; 2025 MSP-GED. Tous droits r\&eacute;serv\&eacute;s./' "$f"; \
       sed -i 's/page.title=Alfresco/page.title=MSP-GED/' "$f"; \
       sed -i 's|<a href="http://www.alfresco.com">Alfresco Software</a> Inc.|MSP-GED|g' "$f"; \
       sed -i "s/Alfresco Content Services may not be available/MSP-GED may not be available/" "$f"; \

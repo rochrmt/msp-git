@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>Reinstall MSP-GED email templates</shortname>
+    <description>Réécrit les templates email OOTB (Workflow Notification, Notify, Invite) avec les versions MSP-GED du classpath. Idempotent, aucune donnée utilisateur modifiée.</description>
+    <url>/msp-ged/reinstall-email-templates</url>
+    <format default="json">argument</format>
+    <authentication>none</authentication>
+    <transaction>required</transaction>
+</webscript>

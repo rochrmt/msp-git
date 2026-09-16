@@ -7,6 +7,7 @@
 
     var POLL_INTERVAL = 30000;
     var WEBSPI_URL = '/alfresco/s/msp-ged/signature-notifications';
+    var READ_URL = '/alfresco/s/msp-ged/signature-notifications-read';
     var authHeader = null;
     var lastTimestamp = 0;
     var shownNotifications = {};
@@ -219,7 +220,7 @@
         // Header of dropdown
         var dropdownHeader = document.createElement('div');
         dropdownHeader.style.cssText = 'padding:12px 16px;border-bottom:1px solid #eee;font-weight:bold;font-size:14px;display:flex;justify-content:space-between;align-items:center;';
-        dropdownHeader.innerHTML = '<span>Notifications de signature</span><span style="color:#999;cursor:pointer;font-size:16px;" id="sg-bell-close">×</span>';
+        dropdownHeader.innerHTML = '<span>Notifications de signature</span><span><a id="sg-mark-all" href="#" style="font-weight:normal;font-size:12px;color:#2196F3;text-decoration:none;margin-right:12px;">Tout marquer lu</a><span style="color:#999;cursor:pointer;font-size:16px;" id="sg-bell-close">×</span></span>';
         dropdown.appendChild(dropdownHeader);
 
         // List
@@ -248,6 +249,12 @@
                 e.stopPropagation();
                 return;
             }
+            if (e.target.id === 'sg-mark-all') {
+                e.preventDefault();
+                e.stopPropagation();
+                markAllRead();
+                return;
+            }
             dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
             e.stopPropagation();
         });
@@ -269,6 +276,29 @@
         }
     }
 
+    function getEventInfo(eventType) {
+        switch(eventType) {
+            case 'ASSIGNMENT': return { icon: '\ud83d\udccb', color: '#2196F3', title: 'T\u00e2che assign\u00e9e' };
+            case 'SIGNED':     return { icon: '\u2714', color: '#2e7d32', title: 'Document sign\u00e9' };
+            case 'REJECTED':   return { icon: '\u2718', color: '#d32f2f', title: 'Document rejet\u00e9' };
+            case 'COMPLETED':  return { icon: '\u2605', color: '#9c27b0', title: 'Workflow termin\u00e9' };
+            default:           return { icon: '\u2022', color: '#999',    title: 'Notification' };
+        }
+    }
+
+    function notifDetail(n) {
+        if (n.eventType === 'ASSIGNMENT') return 'Une t\u00e2che de signature vous est assign\u00e9e';
+        if (n.eventType === 'SIGNED')     return 'par ' + (n.signerName || '');
+        if (n.eventType === 'REJECTED')   return 'rejet\u00e9 par ' + (n.signerName || '');
+        if (n.eventType === 'COMPLETED')  return 'Tous les signataires ont sign\u00e9';
+        return '';
+    }
+
+    function docUuid(n) {
+        var ref = n.documentNodeRef || n.nodeId || '';
+        return ref.split('/').pop();
+    }
+
     function renderDropdown() {
         var list = document.getElementById('sg-bell-list');
         if (!list) return;
@@ -281,23 +311,22 @@
 
         notifications.forEach(function(n) {
             var item = document.createElement('div');
-            var icon = n.status === 'SIGNED' ? '✓' : '✕';
-            var color = n.status === 'SIGNED' ? '#2e7d32' : '#d32f2f';
-            var title = n.status === 'SIGNED' ? 'Signé' : 'Rejeté';
-            var detail = n.status === 'SIGNED'
-                ? 'par ' + (n.signatories ? n.signatories.join(', ') : '')
-                : 'par ' + (n.rejectedBy || '') + (n.rejectionComment ? ' — ' + n.rejectionComment : '');
+            var info = getEventInfo(n.eventType);
+            var detail = notifDetail(n);
 
             item.style.cssText = 'padding:12px 16px;border-bottom:1px solid #f0f0f0;cursor:pointer;display:flex;align-items:flex-start;gap:10px;';
-            item.innerHTML = '<span style="font-size:18px;color:' + color + ';font-weight:bold;">' + icon + '</span>' +
+            item.innerHTML = '<span style="font-size:18px;color:' + info.color + ';font-weight:bold;">' + info.icon + '</span>' +
                 '<div style="flex:1;">' +
-                '<div style="font-weight:bold;color:#333;">' + title + '</div>' +
+                '<div style="font-weight:bold;color:#333;">' + info.title + '</div>' +
                 '<div style="color:#555;word-break:break-word;">' + escapeHtml(n.documentName) + '</div>' +
                 '<div style="color:#888;font-size:11px;margin-top:2px;">' + escapeHtml(detail) + '</div>' +
                 '</div>';
 
             item.addEventListener('click', function() {
-                window.location.hash = '/preview/' + n.nodeId.split('/').pop();
+                markRead([n.nodeId]);
+                notifications = notifications.filter(function(x) { return x.nodeId !== n.nodeId; });
+                updateBadge(notifications.length);
+                window.location.hash = '/preview/' + docUuid(n);
                 if (dropdown) dropdown.style.display = 'none';
             });
 
@@ -312,6 +341,50 @@
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;');
+    }
+
+    // Persist read state on the repo (fire and forget)
+    function markRead(nodeIds) {
+        if (!nodeIds || nodeIds.length === 0 || !authHeader) return;
+        try {
+            fetch(READ_URL + '?ids=' + encodeURIComponent(nodeIds.join(',')), {
+                method: 'POST',
+                headers: { 'Authorization': authHeader },
+                credentials: 'include'
+            }).catch(function() {});
+        } catch (e) { /* silent */ }
+    }
+
+    function markAllRead() {
+        try {
+            if (authHeader) {
+                fetch(READ_URL + '?all=true', {
+                    method: 'POST',
+                    headers: { 'Authorization': authHeader },
+                    credentials: 'include'
+                }).catch(function() {});
+            }
+        } catch (e) { /* silent */ }
+        notifications = [];
+        updateBadge(0);
+        renderDropdown();
+    }
+
+    // Auto-mark read when the document is currently being previewed in ACA
+    function checkConsulted(unreadList) {
+        var hash = window.location.hash || '';
+        if (hash.indexOf('/preview/') === -1) return unreadList;
+        var toMark = [];
+        unreadList.forEach(function(n) {
+            var uuid = docUuid(n);
+            if (uuid && hash.indexOf(uuid) !== -1) toMark.push(n);
+        });
+        if (toMark.length === 0) return unreadList;
+        var marked = {};
+        var ids = [];
+        toMark.forEach(function(n) { marked[n.nodeId] = true; ids.push(n.nodeId); });
+        markRead(ids);
+        return unreadList.filter(function(n) { return !marked[n.nodeId]; });
     }
 
     // --- Polling ---
@@ -335,37 +408,33 @@
             if (data.timestamp) {
                 lastTimestamp = data.timestamp;
             }
-            if (data.notifications && data.notifications.length > 0) {
+            if (data.notifications) {
+                // Keep only unread; drop ones whose document is being viewed
+                var unread = data.notifications.filter(function(n) { return !n.read; });
+                unread = checkConsulted(unread);
+
                 var newOnes = [];
-                data.notifications.forEach(function(n) {
-                    var key = n.nodeId + '_' + n.modifiedAt;
+                unread.forEach(function(n) {
+                    var key = n.nodeId + '_' + n.notificationDate;
                     if (!shownNotifications[key]) {
                         shownNotifications[key] = true;
                         newOnes.push(n);
                     }
                 });
 
-                if (newOnes.length > 0) {
-                    // Prepend new notifications
-                    notifications = newOnes.concat(notifications);
-                    // Keep max 20
-                    if (notifications.length > 20) {
-                        notifications = notifications.slice(0, 20);
-                    }
-                    updateBadge(notifications.length);
-                    renderDropdown();
+                var hadNew = newOnes.length > 0;
+                notifications = unread.slice(0, 20);
+                updateBadge(notifications.length);
+                renderDropdown();
 
-                    // Show browser notification for new events
+                if (hadNew) {
                     newOnes.forEach(function(n) {
                         if ('Notification' in window && Notification.permission === 'granted') {
-                            var title = n.status === 'SIGNED' ? 'Document signé' : 'Document rejeté';
-                            var body = n.documentName + (n.status === 'SIGNED'
-                                ? ' signé par ' + (n.signatories ? n.signatories.join(', ') : '')
-                                : ' rejeté par ' + n.rejectedBy);
-                            var notif = new Notification(title, { body: body, icon: '/assets/favicon-96x96.png' });
+                            var info = getEventInfo(n.eventType);
+                            var notif = new Notification(info.title, { body: n.documentName + ' ' + notifDetail(n), icon: '/assets/favicon-96x96.png' });
                             notif.onclick = function() {
                                 window.focus();
-                                window.location.hash = '/preview/' + n.nodeId.split('/').pop();
+                                window.location.hash = '/preview/' + docUuid(n);
                             };
                         }
                     });

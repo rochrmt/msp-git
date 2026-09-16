@@ -7,7 +7,7 @@
 (function() {
     'use strict';
 
-    console.log('[SG Share] v5 loaded - read/unread support');
+    console.log('[SG Share] v7 loaded - read/unread + auto-consult');
 
     var POLL_INTERVAL = 15000;
     var WEBSPI_URL = '/share/proxy/alfresco/msp-ged/signature-notifications';
@@ -53,6 +53,13 @@
         document.body.appendChild(dropdown);
 
         bellContainer.addEventListener('click', function(e) {
+            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            e.stopPropagation();
+        });
+
+        // The dropdown is a sibling of bellContainer (child of body): its clicks
+        // must be handled on the dropdown itself.
+        dropdown.addEventListener('click', function(e) {
             if (e.target.id === 'sg-bell-close') {
                 dropdown.style.display = 'none';
                 e.stopPropagation();
@@ -64,7 +71,7 @@
                 markAllRead();
                 return;
             }
-            dropdown.style.display = dropdown.style.display === 'none' ? 'block' : 'none';
+            // keep the dropdown open for other inner clicks
             e.stopPropagation();
         });
 
@@ -156,6 +163,29 @@
             .replace(/"/g, '&quot;');
     }
 
+    // Auto-mark notifications as read when the user is already consulting
+    // the target page (task-edit for ASSIGNMENT, document-details otherwise)
+    function checkConsulted(unreadList) {
+        var href = window.location.href;
+        var toMark = [];
+        unreadList.forEach(function(n) {
+            if (n.taskId && href.indexOf('task-') !== -1 &&
+                (href.indexOf(encodeURIComponent(n.taskId)) !== -1 || href.indexOf(n.taskId) !== -1)) {
+                toMark.push(n);
+            } else if (n.documentNodeRef && href.indexOf('document-details') !== -1 &&
+                (href.indexOf(encodeURIComponent(n.documentNodeRef)) !== -1 || href.indexOf(n.documentNodeRef) !== -1)) {
+                toMark.push(n);
+            }
+        });
+        if (toMark.length === 0) return unreadList;
+
+        var marked = {};
+        var ids = [];
+        toMark.forEach(function(n) { marked[n.nodeId] = true; ids.push(n.nodeId); });
+        markRead(ids);
+        return unreadList.filter(function(n) { return !marked[n.nodeId]; });
+    }
+
     // Persist read state on the repo (fire and forget)
     function markRead(nodeIds) {
         if (!nodeIds || nodeIds.length === 0) return;
@@ -192,6 +222,8 @@
 
                 // Only unread notifications are kept in the list
                 var unread = data.notifications.filter(function(n) { return !n.read; });
+                // Drop notifications whose target page is currently being viewed
+                unread = checkConsulted(unread);
 
                 // Detect brand-new unread notifications for toasts
                 var newOnes = [];

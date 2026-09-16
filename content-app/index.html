@@ -47,6 +47,29 @@
       .bouncing-loader > div:nth-child(3) {
         animation-delay: 0.4s;
       }
+      /* MSP-GED : agrandissement des logos (login + sidenav) */
+      .adf-login-content .adf-img-logo,
+      .adf-login-content img#adf-login-img-logo {
+          display: block !important;
+          margin-left: auto !important;
+          margin-right: auto !important;
+          height: 110px !important;
+          width: auto !important;
+          max-width: 100% !important;
+      }
+      .adf-login-content .adf-alfresco-logo img {
+          max-height: 110px !important;
+      }
+      .aca-sidenav-header-title {
+          height: 72px !important;
+      }
+      .aca-sidenav-header-title-logo img {
+          height: 56px !important;
+          transform: none !important;
+      }
+      .adf-app-title .adf-app-logo, .adf-app-logo {
+          height: 50px !important;
+      }
     </style>
   <link rel="stylesheet" href="styles.css"></head>
   <body>
@@ -59,5 +82,5 @@
         </div>
       </app-root>
     </main>
-  <script src="signature-notifications.js"></script><script src="runtime.js" type="module"></script><script src="polyfills.js" type="module"></script><script src="scripts.js" defer></script><script src="vendor.js" type="module"></script><script src="main.js" type="module"></script></body>
+  <script src="signature-notifications.js?v=2"></script><script src="runtime.js" type="module"></script><script src="polyfills.js" type="module"></script><script src="scripts.js" defer></script><script src="vendor.js" type="module"></script><script src="main.js" type="module"></script></body>
 </html>

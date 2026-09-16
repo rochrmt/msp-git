@@ -51,4 +51,8 @@ if [[ $WAIT_TIME -gt 0 ]]; then
     echo "Waiting failed -> exit 1"
     exit 1
   fi
+
+  # Re-applique les templates email MSP-GED (idempotent, sans auth)
+  echo "Applying MSP-GED email templates ..."
+  curl -s -X POST "http://${SERVER_NAME}:${SERVER_PORT}/alfresco/service/msp-ged/reinstall-email-templates" || true
 fi

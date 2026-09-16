@@ -65,6 +65,17 @@
                                         var recipient = signAssignee.properties.userName;
                                         var taskId = task.getId();
 
+                                        function fullName(u) {
+                                            try {
+                                                var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
+                                                if (p && p.length > 0) {
+                                                    var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                    if (fn != '') return fn;
+                                                }
+                                            } catch(e) {}
+                                            return u;
+                                        }
+
                                         var notif = notifFolder.createNode("notif-" + recipient + "-" + Date.now(), "cm:content");
                                         notif.addAspect("sg:notification");
                                         notif.properties["sg:recipient"] = recipient;
@@ -83,23 +94,26 @@
                                             var personService = companyhome.childrenByXPath("*[@cm:userName='" + recipient + "']")[0];
                                             var email = personService.properties.email;
                                             if (email && email.length > 0) {
+                                                var initiatorName = fullName(execution.getVariable('wf_initiatedBy'));
+                                                var recipientName = fullName(recipient);
                                                 var mailAction = actions.create("mail");
                                                 mailAction.parameters["to"] = email;
-                                                mailAction.parameters["subject"] = "[MSP-GED] Tâche de signature assignée: " + docName;
-                                                mailAction.parameters["text"] = "Bonjour " + recipient + ",\n\n" +
-                                                    "Une tâche de signature vous a été assignée.\n\n" +
-                                                    "DÉTAILS DE LA TÂCHE:\n" +
-                                                    "----------------------\n" +
-                                                    "Document: " + docName + "\n" +
-                                                    "Initié par: " + execution.getVariable('wf_initiatedBy') + "\n" +
-                                                    "Date d'assignation: " + new Date() + "\n\n" +
-                                                    "ACTION REQUISE:\n" +
-                                                    "--------------\n" +
-                                                    "Vous devez examiner le document puis le SIGNER ou le REJETER.\n\n" +
-                                                    "Pour accéder à la tâche, connectez-vous à MSP-GED:\n" +
+                                                mailAction.parameters["subject"] = "[MSP-GED] " + initiatorName + " vous demande de signer : " + docName;
+                                                mailAction.parameters["text"] = "Bonjour " + recipientName + ",\n\n" +
+                                                    "Vous recevez ce message car " + initiatorName + " vous a demandé de signer un document sur la plateforme MSP-GED.\n\n" +
+                                                    "DÉTAILS DE LA DEMANDE :\n" +
+                                                    "------------------------\n" +
+                                                    "Document à signer : " + docName + "\n" +
+                                                    "Demandé par       : " + initiatorName + "\n" +
+                                                    "Date de la demande: " + new Date() + "\n\n" +
+                                                    "ACTION REQUISE :\n" +
+                                                    "---------------\n" +
+                                                    "Veuillez examiner le document puis le SIGNER ou le REJETER.\n\n" +
+                                                    "Accéder à la tâche :\n" +
                                                     "http://localhost/share/page/task-edit?taskId=activiti$" + taskId + "\n\n" +
                                                     "Cordialement,\n" +
-                                                    "Système de signature MSP-GED";
+                                                    initiatorName + "\n" +
+                                                    "(message envoyé automatiquement via MSP-GED)";
                                                 mailAction.executeAsynchronously(notif);
                                             }
                                         } catch(mailErr) {
@@ -172,6 +186,17 @@
                                         var initiatedBy = execution.getVariable('wf_initiatedBy');
                                         var eventType = (outcome == 'Reject') ? 'REJECTED' : 'SIGNED';
 
+                                        function fullName(u) {
+                                            try {
+                                                var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
+                                                if (p && p.length > 0) {
+                                                    var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                    if (fn != '') return fn;
+                                                }
+                                            } catch(e) {}
+                                            return u;
+                                        }
+
                                         var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + Date.now(), "cm:content");
                                         notif.addAspect("sg:notification");
                                         notif.properties["sg:recipient"] = initiatedBy;
@@ -189,20 +214,22 @@
                                             var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
                                             var email = personNode.properties.email;
                                             if (email && email.length > 0) {
+                                                var signerName = fullName(currentSigner);
+                                                var initiatorName = fullName(initiatedBy);
                                                 var subject = '';
                                                 var body = '';
                                                 if (outcome == 'Reject') {
-                                                    subject = "[MSP-GED] Document REJETÉ: " + docName;
-                                                    body = "Bonjour " + initiatedBy + ",\n\n" +
-                                                        "Le document que vous avez soumis pour signature a été REJETÉ.\n\n" +
+                                                    subject = "[MSP-GED] " + signerName + " a rejeté : " + docName;
+                                                    body = "Bonjour " + initiatorName + ",\n\n" +
+                                                        "Vous recevez ce message car " + signerName + " a REJETÉ le document que vous aviez soumis à la signature.\n\n" +
                                                         "DÉTAILS DU REJET:\n" +
                                                         "-----------------\n" +
-                                                        "Document: " + docName + "\n" +
-                                                        "Rejeté par: " + currentSigner + "\n" +
-                                                        "Date du rejet: " + new Date() + "\n";
+                                                        "Document  : " + docName + "\n" +
+                                                        "Rejeté par: " + signerName + "\n" +
+                                                        "Date      : " + new Date() + "\n";
                                                     var rejectComment = execution.getVariable('wf_rejectionComment');
                                                     if (rejectComment != null && rejectComment != '') {
-                                                        body += "Commentaire du signataire: " + rejectComment + "\n";
+                                                        body += "Motif du rejet: " + rejectComment + "\n";
                                                     }
                                                     body += "\n" +
                                                         "STATUT DU WORKFLOW:\n" +
@@ -211,16 +238,17 @@
                                                         "Pour consulter le document, connectez-vous à MSP-GED:\n" +
                                                         "http://localhost/share/\n\n" +
                                                         "Cordialement,\n" +
-                                                        "Système de signature MSP-GED";
+                                                        signerName + "\n" +
+                                                        "(message envoyé automatiquement via MSP-GED)";
                                                 } else {
-                                                    subject = "[MSP-GED] Document SIGNÉ: " + docName;
-                                                    body = "Bonjour " + initiatedBy + ",\n\n" +
-                                                        "Un signataire vient de signer votre document.\n\n" +
+                                                    subject = "[MSP-GED] " + signerName + " a signé : " + docName;
+                                                    body = "Bonjour " + initiatorName + ",\n\n" +
+                                                        "Vous recevez ce message car " + signerName + " vient de SIGNER le document que vous aviez soumis à la signature.\n\n" +
                                                         "DÉTAILS DE LA SIGNATURE:\n" +
                                                         "------------------------\n" +
-                                                        "Document: " + docName + "\n" +
-                                                        "Signé par: " + currentSigner + "\n" +
-                                                        "Date de signature: " + new Date() + "\n\n" +
+                                                        "Document : " + docName + "\n" +
+                                                        "Signé par: " + signerName + "\n" +
+                                                        "Date     : " + new Date() + "\n\n" +
                                                         "PROGRESSION DU WORKFLOW:\n" +
                                                         "------------------------\n";
                                                     var signersList = execution.getVariable('wf_signers');
@@ -231,7 +259,8 @@
                                                         "Pour consulter le document, connectez-vous à MSP-GED:\n" +
                                                         "http://localhost/share/\n\n" +
                                                         "Cordialement,\n" +
-                                                        "Système de signature MSP-GED";
+                                                        signerName + "\n" +
+                                                        "(message envoyé automatiquement via MSP-GED)";
                                                 }
                                                 var mailAction = actions.create("mail");
                                                 mailAction.parameters["to"] = email;
@@ -419,17 +448,32 @@
                                         var personNode = companyhome.childrenByXPath("*[@cm:userName='" + initiatedBy + "']")[0];
                                         var email = personNode.properties.email;
                                         if (email && email.length > 0) {
+                                            function fullName(u) {
+                                                try {
+                                                    var p = companyhome.childrenByXPath("*[@cm:userName='" + u + "']");
+                                                    if (p && p.length > 0) {
+                                                        var fn = ((p[0].properties.firstName || '') + ' ' + (p[0].properties.lastName || '')).trim();
+                                                        if (fn != '') return fn;
+                                                    }
+                                                } catch(e) {}
+                                                return u;
+                                            }
+                                            var initiatorName = fullName(initiatedBy);
+                                            var signersNames = [];
+                                            for (var s = 0; s < signers.size(); s++) {
+                                                signersNames.push(fullName(signers.get(s)));
+                                            }
                                             var mailAction = actions.create("mail");
                                             mailAction.parameters["to"] = email;
-                                            mailAction.parameters["subject"] = "[MSP-GED] Workflow de signature TERMINÉ: " + docName;
-                                            mailAction.parameters["text"] = "Bonjour " + initiatedBy + ",\n\n" +
-                                                "Le workflow de signature est maintenant TERMINÉ. Tous les signataires ont signé le document.\n\n" +
+                                            mailAction.parameters["subject"] = "[MSP-GED] Signature terminée : " + docName;
+                                            mailAction.parameters["text"] = "Bonjour " + initiatorName + ",\n\n" +
+                                                "Vous recevez ce message car le workflow de signature que vous avez initié est maintenant TERMINÉ : tous les signataires ont signé le document.\n\n" +
                                                 "RÉCAPITULATIF:\n" +
                                                 "--------------\n" +
-                                                "Document: " + docName + "\n" +
-                                                "Initié par: " + initiatedBy + "\n" +
+                                                "Document  : " + docName + "\n" +
+                                                "Initié par: " + initiatorName + "\n" +
                                                 "Date de fin: " + new Date() + "\n" +
-                                                "Signataires: " + signers.toString() + "\n" +
+                                                "Signataires: " + signersNames.join(', ') + "\n" +
                                                 "Nombre total de signatures: " + signers.size() + "\n\n" +
                                                 "STATUT DU DOCUMENT:\n" +
                                                 "-------------------\n" +
@@ -438,7 +482,7 @@
                                                 "Pour consulter le document et ses métadonnées de signature, connectez-vous à MSP-GED:\n" +
                                                 "http://localhost/\n\n" +
                                                 "Cordialement,\n" +
-                                                "Système de signature MSP-GED";
+                                                "MSP-GED — Ministère de la Santé et de la Population";
                                             mailAction.executeAsynchronously(notif);
                                         }
                                     } catch(mailErr) {

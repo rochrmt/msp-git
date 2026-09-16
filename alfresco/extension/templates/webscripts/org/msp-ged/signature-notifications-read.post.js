@@ -13,12 +13,10 @@ try {
 function markRead(node) {
     try {
         var authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
-        authUtil.runAsSystem(new Packages.org.alfresco.repo.security.authentication.AuthenticationUtil.RunAsWork({
-            doWork: function() {
-                node.properties['sg:notificationRead'] = true;
-                node.save();
-            }
-        }));
+        authUtil.runAsSystem(function() {
+            node.properties['sg:notificationRead'] = true;
+            node.save();
+        });
         return true;
     } catch (e) {
         // Fallback: try direct write (works if user has write permission)

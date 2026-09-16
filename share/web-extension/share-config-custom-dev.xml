@@ -14,6 +14,22 @@
     <repository-url>${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/alfresco</repository-url>
   </config>
 
+   <!-- Branding MSP-GED : footer/about/login -->
+   <config evaluator="string-compare" condition="Edition" replace="true">
+      <footer>
+         <logo>alfresco-logo.svg</logo>
+         <alt-text>MSP-GED</alt-text>
+         <css-class>footer-com</css-class>
+         <label>label.copyright</label>
+      </footer>
+      <about>
+         <css-class>logo-com</css-class>
+      </about>
+      <login>
+         <css-class>logo-com</css-class>
+      </login>
+   </config>
+
    <!-- ================================================================== -->
    <!-- Multi-Signature Workflow forms                                     -->
    <!-- ================================================================== -->
