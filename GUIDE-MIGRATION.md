@@ -76,12 +76,12 @@ SHARE_PORT=443
 ```bash
 nano docker-compose.yml
 ```
-> **Important pour le test** : dans le service `alfresco`, remplacer la ligne `-Dmail.host=smtp.gmail.com` par :
+> **Optionnel mais recommandé pour le test** : dans le service `alfresco`, remplacer la ligne `-Dmail.host=smtp.gmail.com` par :
 
 ```yaml
         -Dmail.host=localhost
 ```
-> Coupe l'envoi réel d'emails — sinon l'instance de test enverrait des notifications en double aux utilisateurs de la prod.
+> Coupe l'envoi réel d'emails. La prod actuelle n'envoie pas d'emails (pas de doublons possibles), mais la nouvelle version si : tout workflow de signature testé enverra de **vrais emails aux vrais utilisateurs** (ex. « Financier vous a assigné une tâche » à secretaire) pour des tâches qui n'existent qu'en test. Si tu testes uniquement avec des comptes dont tu contrôles les boîtes, tu peux laisser le SMTP actif.
 
 ```bash
 docker compose build alfresco share
@@ -126,7 +126,7 @@ Sur **ta machine Windows** (PowerShell admin) :
 ```powershell
 Add-Content "C:\Windows\System32\drivers\etc\hosts" "`n<IP-NOUVEAU-SERVEUR>`tged-msp.com"
 ```
-> Force **ton** poste à résoudre `ged-msp.com` vers le serveur de test. Les autres utilisateurs restent sur la prod (DNS inchangé). Tester ensuite : login, dashboard, notifications, workflow de signature, emails (attention : SMTP coupé → vérifier que le workflow tourne, pas que le mail arrive).
+> Force **ton** poste à résoudre `ged-msp.com` vers le serveur de test. Les autres utilisateurs restent sur la prod (DNS inchangé). Tester ensuite : login, dashboard, notifications, workflow de signature. Si le SMTP est coupé, vérifier que le workflow avance (pas que le mail arrive) ; si SMTP actif, vérifier le contenu des mails reçus.
 
 ### Si le test échoue
 
@@ -241,5 +241,5 @@ docker compose up -d
 ## Notes
 
 - **Ne jamais copier `data/postgres-data` à chaud** (`cp` pendant que postgres tourne = base corrompue). Toujours `pg_dump` / restore. Sur le même serveur, le symlink évite complètement le problème.
-- Les emails SMTP prod (`gedmsp@gmail.com`) sont actifs uniquement dans le stack de production. Sur le test : `-Dmail.host=localhost`.
+- Les emails SMTP prod (`gedmsp@gmail.com`) doivent être actifs dans le stack de production. Sur le test : `-Dmail.host=localhost` recommandé pour éviter les vrais emails vers les utilisateurs (optionnel).
 - Un seul Traefik peut écouter sur 80/443 par serveur — les deux stacks ne peuvent jamais tourner en même temps sur la même machine avec le compose de prod.
