@@ -14,3 +14,7 @@ traefik/letsencrypt/
 # OS
 .DS_Store
 Thumbs.db
+
+# Documentation interne (guides, procedures, secrets)
+GUIDE-*.md
+*.md
