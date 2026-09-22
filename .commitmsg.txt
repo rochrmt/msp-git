@@ -1,0 +1,11 @@
+Externalisation des secrets SMTP et Solr dans .env
+
+- mail.password -> ${MAIL_PASSWORD:?...} (compose refuse de demarrer sans valeur)
+- solr.sharedSecret + alfresco.secureComms.secret -> ${SOLR_SECRET:?...} (une seule variable, coherence garantie)
+- .env.example documente les variables obligatoires
+- GUIDE-MIGRATION.md : blocs .env des phases 2 et 3 mis a jour
+- GUIDE-DEPLOIEMENT-VPS.md : section 10.1 pointe desormais vers .env
+
+Generated with [Devin](https://devin.ai)
+
+Co-Authored-By: Devin <158243242+devin-ai-integration[bot]@users.noreply.github.com>

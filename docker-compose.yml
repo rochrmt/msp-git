@@ -61,7 +61,7 @@ services:
         -Dsolr.secureComms=secret
         -Dsolr.baseUrl=/solr
         -Dindex.subsystem.name=solr6
-        -Dsolr.sharedSecret=lin6da04b7h
+        -Dsolr.sharedSecret=${SOLR_SECRET:?Definir SOLR_SECRET dans .env}
         -Dalfresco.host=${SERVER_NAME}
         -Dalfresco.port=${SHARE_PORT}
         -Dapi-explorer.url=${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/api-explorer
@@ -88,7 +88,7 @@ services:
         -Dmail.smtp.auth=true
         -Dmail.smtp.starttls.enable=true
         -Dmail.username=gedmsp@gmail.com
-        -Dmail.password=wgaqgmtwdfhlpdvq
+        -Dmail.password=${MAIL_PASSWORD:?Definir MAIL_PASSWORD dans .env}
         -Dmail.encoding=UTF-8
         -Dmail.from.default=gedmsp@gmail.com
         -Dmail.from.enabled=false
@@ -226,7 +226,7 @@ services:
       SOLR_CREATE_ALFRESCO_DEFAULTS: "alfresco,archive"
       SOLR_OPTS: "
         -XX:-UseLargePages
-        -Dalfresco.secureComms.secret=lin6da04b7h
+        -Dalfresco.secureComms.secret=${SOLR_SECRET:?Definir SOLR_SECRET dans .env}
       "
     depends_on:
       alfresco:

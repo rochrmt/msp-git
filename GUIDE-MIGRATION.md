@@ -81,7 +81,13 @@ nano .env
 SERVER_NAME=ged-msp.com
 PROTOCOL=https
 SHARE_PORT=443
+
+# Secrets — OBLIGATOIRES (compose refuse de demarrer sans eux)
+MAIL_PASSWORD=<mot de passe applicatif Gmail>
+SOLR_SECRET=<secret partage alfresco-solr>
 ```
+
+> `MAIL_PASSWORD` et `SOLR_SECRET` ne sont plus dans `docker-compose.yml` (commité sur GitHub) — ils vivent uniquement dans `.env` (gitignoré). Sur un clone existant après `git pull`, ajouter ces deux lignes à `.env` sinon `docker compose` affiche une erreur explicite au démarrage.
 
 ```bash
 nano docker-compose.yml
@@ -207,6 +213,10 @@ nano .env
 SERVER_NAME=ged-msp.com
 PROTOCOL=https
 SHARE_PORT=443
+
+# Secrets — OBLIGATOIRES (compose refuse de demarrer sans eux)
+MAIL_PASSWORD=<mot de passe applicatif Gmail>
+SOLR_SECRET=<secret partage alfresco-solr>
 ```
 
 ```bash

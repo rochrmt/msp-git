@@ -388,17 +388,17 @@ Puis testez dans le navigateur :
 
 ### 10.1 Changer le mot de passe SMTP Gmail
 
-Le mot de passe Gmail (`wgaqgmtwdfhlpdvq`) est exposé dans le `docker-compose.yml`. Il faut le révoquer et en créer un nouveau :
+Le mot de passe Gmail est externalisé dans `.env` (variable `MAIL_PASSWORD`, gitignorée — plus rien dans `docker-compose.yml`). Pour le changer :
 
 1. Allez sur https://myaccount.google.com/apppasswords (compte gedmsp@gmail.com)
 2. Supprimez l'ancien mot de passe d'application
 3. Créez-en un nouveau
-4. Mettez à jour le `docker-compose.yml` :
+4. Mettez à jour le `.env` :
 
 ```bash
 cd /home/msp_ged-deploy-v25
-nano docker-compose.yml
-# Ligne ~89 : remplacez wgaqgmtwdfhlpdvq par le nouveau mot de passe
+nano .env
+# Remplacez la valeur de MAIL_PASSWORD= par le nouveau mot de passe
 ```
 
 Puis redémarrez Alfresco :
