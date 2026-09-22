@@ -283,6 +283,12 @@ cat .env
 #   SERVER_NAME=ged-msp.com
 #   PROTOCOL=https
 #   SHARE_PORT=443
+#   MAIL_PASSWORD=wgaqgmtwdfhlpdvq
+#   SOLR_SECRET=lin6da04b7h
+
+# Si MAIL_PASSWORD ou SOLR_SECRET sont absents, les ajouter :
+echo "MAIL_PASSWORD=wgaqgmtwdfhlpdvq" >> .env
+echo "SOLR_SECRET=lin6da04b7h" >> .env
 ```
 
 > **Note** : `share-config-custom-dev.xml` et les filtres CSRF de
