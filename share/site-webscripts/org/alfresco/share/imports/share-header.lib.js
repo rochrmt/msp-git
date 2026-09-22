@@ -818,6 +818,17 @@ function generateAppItems() {
          }
       },
       {
+         id: "HEADER_SIGNATURE_REGISTRY",
+         name: "alfresco/menus/AlfMenuBarItem",
+         config: {
+            id: "HEADER_SIGNATURE_REGISTRY",
+            label: "Registre des signatures",
+            targetUrl: "proxy/alfresco/msp-ged/signature-registry",
+            targetUrlType: "CONTEXT_RELATIVE",
+            targetUrlLocation: "NEW"
+         }
+      },
+      {
          id: "HEADER_SITES_MENU",
          name: "alfresco/header/AlfSitesMenu",
          config: {
@@ -967,6 +978,19 @@ function getUserMenuWidgets()
             label: "my_profile.label",
             iconClass: "alf-user-profile-icon",
             targetUrl: "user/" + encodeURIComponent(user.name) + "/profile"
+         }
+      },
+      {
+         id: "HEADER_USER_MENU_SIGNATURE_REGISTRY",
+         name: "alfresco/header/AlfMenuItem",
+         config:
+         {
+            id: "HEADER_USER_MENU_SIGNATURE_REGISTRY",
+            label: "Registre des signatures",
+            iconClass: "alf-user-profile-icon",
+            targetUrl: "proxy/alfresco/msp-ged/signature-registry",
+            targetUrlType: "CONTEXT_RELATIVE",
+            targetUrlLocation: "NEW"
          }
       },
       {

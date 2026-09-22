@@ -10,7 +10,7 @@
    expressionLanguage="http://www.w3.org/1999/XPath"
    targetNamespace="http://msp-ged.org/signature">
 
-    <process isExecutable="true" id="multiSignatureWorkflow" name="Multi-Signature Workflow">
+    <process isExecutable="true" id="multiSignatureWorkflow" name="Signature de document(TDR)">
 
         <extensionElements>
             <activiti:executionListener event="start" class="org.alfresco.repo.workflow.activiti.listener.ScriptExecutionListener">
@@ -47,6 +47,23 @@
                                     if (typeof logger != 'undefined') logger.error("Packages not available: " + e1);
                                 }
 
+                                function grantItemAccess() {
+                                    try {
+                                        var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
+                                        var assigneeName = signAssignee.properties.userName;
+                                        if (pkg && pkg.children) {
+                                            for (var gi = 0; gi < pkg.children.length; gi++) {
+                                                var gdoc = pkg.children[gi];
+                                                if (gdoc != null) {
+                                                    gdoc.setPermission("Editor", assigneeName);
+                                                }
+                                            }
+                                        }
+                                    } catch(grErr) {
+                                        if (typeof logger != 'undefined') logger.error("grantItemAccess failed: " + grErr);
+                                    }
+                                }
+
                                 function createAssignmentNotif() {
                                     var shared = companyhome.childByNamePath("Shared");
                                     if (shared == null) { shared = companyhome; }
@@ -58,9 +75,15 @@
                                         var pkg = (typeof bpm_package != 'undefined') ? bpm_package : execution.getVariable('bpm_package');
                                         var docName = '';
                                         var docRef = '';
+                                        var docList = '';
                                         if (pkg && pkg.children && pkg.children.length > 0) {
-                                            docName = pkg.children[0].name;
+                                            var names = [];
+                                            for (var ci = 0; ci < pkg.children.length; ci++) {
+                                                if (pkg.children[ci] != null) names.push('' + pkg.children[ci].name);
+                                            }
+                                            docName = names.join(' ; ');
                                             docRef = pkg.children[0].nodeRef.toString();
+                                            docList = ' - ' + names.join('\n - ');
                                         }
                                         var recipient = signAssignee.properties.userName;
                                         var taskId = task.getId();
@@ -99,10 +122,10 @@
                                                 mailAction.parameters["to"] = email;
                                                 mailAction.parameters["subject"] = "[MSP-GED] " + initiatorName + " vous demande de signer : " + docName;
                                                 mailAction.parameters["text"] = "Bonjour,\n\n" +
-                                                    "Une tâche vous a été assignée de la part de " + initiatorName + " : signature du document « " + docName + " ».\n\n" +
+                                                    "Une tâche vous a été assignée de la part de " + initiatorName + " : signature de document(s).\n\n" +
                                                     "DÉTAILS DE LA DEMANDE :\n" +
                                                     "------------------------\n" +
-                                                    "Document à signer : " + docName + "\n" +
+                                                    "Document(s) à signer :\n" + docList + "\n" +
                                                     "Demandé par       : " + initiatorName + "\n" +
                                                     "Date de la demande: " + new Date() + "\n\n" +
                                                     "ACTION REQUISE :\n" +
@@ -125,11 +148,13 @@
                                     authUtil.pushAuthentication();
                                     authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
                                     try {
+                                        grantItemAccess();
                                         createAssignmentNotif();
                                     } finally {
                                         authUtil.popAuthentication();
                                     }
                                 } else {
+                                    grantItemAccess();
                                     createAssignmentNotif();
                                 }
                             } catch(e) {
@@ -144,18 +169,36 @@
                             var outcome = task.getVariable('sg_signOutcome');
                             execution.setVariable('sg_signOutcome', outcome);
                             var currentSigner = signAssignee.properties.userName;
+
+                            // Decisions par document (format: nodeRef=Sign;nodeRef=Reject)
+                            var docDecisions = {};
+                            try {
+                                var rawDecisions = task.getVariable('sg_docDecisions');
+                                if (rawDecisions != null && ('' + rawDecisions).length > 0) {
+                                    execution.setVariable('wf_docDecisions', '' + rawDecisions);
+                                    var dParts = ('' + rawDecisions).split(';');
+                                    for (var dp = 0; dp < dParts.length; dp++) {
+                                        var kv = dParts[dp].split('=');
+                                        if (kv.length == 2) docDecisions[kv[0]] = kv[1];
+                                    }
+                                }
+                            } catch(ddErr) {}
+                            // Le signataire a traite les documents presentes (signe ou rejete par doc)
+                            var signers = execution.getVariable('wf_signers');
+                            if (signers == null) {
+                                signers = new java.util.ArrayList();
+                            }
+                            if (!signers.contains(currentSigner)) {
+                                signers.add(currentSigner);
+                            }
+                            execution.setVariable('wf_signers', signers);
+
                             if (outcome == 'Reject') {
-                                execution.setVariable('wf_signatureRejected', true);
                                 execution.setVariable('wf_rejectedBy', currentSigner);
                                 var comment = task.getVariable('bpm_comment');
                                 execution.setVariable('wf_rejectionComment', (comment != null) ? comment : '');
-                            } else {
-                                var signers = execution.getVariable('wf_signers');
-                                if (signers == null) {
-                                    signers = new java.util.ArrayList();
-                                }
-                                signers.add(currentSigner);
-                                execution.setVariable('wf_signers', signers);
+                                // wf_signatureRejected sera calcule apres le marquage par document
+                                // (arret du workflow seulement si TOUS les documents sont rejetes)
                             }
 
                             // Notify the initiator: SIGNED or REJECTED event
@@ -179,11 +222,56 @@
                                         var docName = '';
                                         var docRef = '';
                                         if (pkg && pkg.children && pkg.children.length > 0) {
-                                            docName = pkg.children[0].name;
+                                            var names = [];
+                                            for (var cn = 0; cn < pkg.children.length; cn++) {
+                                                if (pkg.children[cn] != null) names.push('' + pkg.children[cn].name);
+                                            }
+                                            docName = names.join(' ; ');
                                             docRef = pkg.children[0].nodeRef.toString();
                                         }
                                         var initiatedBy = execution.getVariable('wf_initiatedBy');
                                         var eventType = (outcome == 'Reject') ? 'REJECTED' : 'SIGNED';
+                                        var docResults = '';
+
+                                        // Marquage immediat des documents rejetes + comptage des docs encore vivants
+                                        var taggingService = null;
+                                        try {
+                                            var ctxR = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
+                                            taggingService = ctxR.getBean('taggingService', org.alfresco.service.cmr.tagging.TaggingService);
+                                        } catch(tsErr) {}
+                                        var aliveCount = 0;
+                                        var hasDecisions = false;
+                                        for (var dk in docDecisions) { hasDecisions = true; break; }
+                                        if (pkg && pkg.children) {
+                                            for (var ri = 0; ri < pkg.children.length; ri++) {
+                                                var rdoc = pkg.children[ri];
+                                                if (rdoc == null) continue;
+                                                var rStatus = '' + (rdoc.properties['sg:signatureStatus'] || '');
+                                                // Sans detail par doc (ancien formulaire), un rejet global rejette tout
+                                                var rIsReject = (outcome == 'Reject' && (docDecisions[rdoc.nodeRef.toString()] == 'Reject' || !hasDecisions));
+                                                if (rIsReject && rStatus != 'REJECTED') {
+                                                    try {
+                                                        if (!rdoc.hasAspect('sg:signature')) rdoc.addAspect('sg:signature');
+                                                        rdoc.properties['sg:signatureStatus'] = 'REJECTED';
+                                                        rdoc.properties['sg:rejectedBy'] = currentSigner;
+                                                        rdoc.properties['sg:rejectionDate'] = new java.util.Date();
+                                                        rdoc.properties['sg:initiatedBy'] = initiatedBy;
+                                                        var rComment = execution.getVariable('wf_rejectionComment');
+                                                        if (rComment != null && ('' + rComment).length > 0) {
+                                                            rdoc.properties['sg:rejectionComment'] = '' + rComment;
+                                                        }
+                                                        rdoc.save();
+                                                        if (taggingService != null) taggingService.addTag(rdoc.nodeRef, 'rejeté');
+                                                        rStatus = 'REJECTED';
+                                                    } catch(markErr) {}
+                                                }
+                                                if (rStatus != 'REJECTED') aliveCount++;
+                                            }
+                                        }
+                                        // Arret du workflow seulement si aucun document ne reste a signer
+                                        if (outcome == 'Reject') {
+                                            execution.setVariable('wf_signatureRejected', aliveCount == 0);
+                                        }
 
                                         function fullName(u) {
                                             try {
@@ -196,17 +284,142 @@
                                             return u;
                                         }
 
-                                        var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + Date.now(), "sg:notificationRecord");
-                                        notif.addAspect("sg:notification");
-                                        notif.properties["sg:recipient"] = initiatedBy;
-                                        notif.properties["sg:eventType"] = eventType;
-                                        notif.properties["sg:notificationDocumentName"] = docName;
-                                        notif.properties["sg:signerName"] = currentSigner;
-                                        notif.properties["sg:workflowId"] = execution.getProcessInstanceId();
-                                        notif.properties["sg:notificationRead"] = false;
-                                        notif.properties["sg:notificationDate"] = new Date();
-                                        notif.properties["sg:documentNodeRef"] = docRef;
-                                        notif.save();
+                                        // Une notification par document, avec son propre statut et nodeRef
+                                        if (pkg && pkg.children) {
+                                            for (var ni = 0; ni < pkg.children.length; ni++) {
+                                                var ndoc = pkg.children[ni];
+                                                if (ndoc == null) continue;
+                                                var nRef = ndoc.nodeRef.toString();
+                                                // Ne pas notifier les documents rejetes par un signataire precedent
+                                                var nStatus = '' + (ndoc.properties['sg:signatureStatus'] || '');
+                                                if (nStatus == 'REJECTED' && docDecisions[nRef] != 'Reject') continue;
+                                                var nEvent = (outcome == 'Reject' && (docDecisions[nRef] == 'Reject' || !hasDecisions)) ? 'REJECTED' : 'SIGNED';
+                                                var notif = notifFolder.createNode("notif-" + initiatedBy + "-" + ni + "-" + Date.now(), "sg:notificationRecord");
+                                                notif.addAspect("sg:notification");
+                                                notif.properties["sg:recipient"] = initiatedBy;
+                                                notif.properties["sg:eventType"] = nEvent;
+                                                notif.properties["sg:notificationDocumentName"] = '' + ndoc.name;
+                                                notif.properties["sg:signerName"] = currentSigner;
+                                                notif.properties["sg:workflowId"] = execution.getProcessInstanceId();
+                                                notif.properties["sg:notificationRead"] = false;
+                                                notif.properties["sg:notificationDate"] = new Date();
+                                                notif.properties["sg:documentNodeRef"] = nRef;
+                                                notif.save();
+                                            }
+                                        }
+
+                                        // Audit log and printable proof updated after each signature decision
+                                        try {
+                                            var ctx2 = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
+                                            var contentService2 = ctx2.getBean('contentService', org.alfresco.service.cmr.repository.ContentService);
+                                            function fmtDate2(dd) {
+                                                function p2(n) { return (n < 10 ? '0' : '') + n; }
+                                                return p2(dd.getDate()) + '/' + p2(dd.getMonth() + 1) + '/' + dd.getFullYear() + ' ' + p2(dd.getHours()) + ':' + p2(dd.getMinutes()) + ':' + p2(dd.getSeconds());
+                                            }
+                                            function escH2(s) {
+                                                return ('' + (s == null ? '' : s)).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+                                            }
+                                            function toAuditList(value) {
+                                                var result = new java.util.ArrayList();
+                                                if (value == null) return result;
+                                                try {
+                                                    for (var li = 0; li < value.size(); li++) result.add('' + value.get(li));
+                                                    return result;
+                                                } catch(le1) {}
+                                                try {
+                                                    for (var lj = 0; lj < value.length; lj++) result.add('' + value[lj]);
+                                                    if (result.size() > 0) return result;
+                                                } catch(le2) {}
+                                                result.add('' + value);
+                                                return result;
+                                            }
+                                            if (pkg && pkg.children) {
+                                                for (var di = 0; di < pkg.children.length; di++) {
+                                                    var adoc = pkg.children[di];
+                                                    if (adoc == null) continue;
+                                                    var ahex = '';
+                                                    try {
+                                                        var areader = contentService2.getReader(adoc.nodeRef, org.alfresco.model.ContentModel.PROP_CONTENT);
+                                                        if (areader != null && areader.exists()) {
+                                                            var ais = areader.getContentInputStream();
+                                                            var adigest = Packages.java.security.MessageDigest.getInstance("SHA-256");
+                                                            var abuf = Packages.java.lang.reflect.Array.newInstance(Packages.java.lang.Byte.TYPE, 8192);
+                                                            var abr;
+                                                            while ((abr = ais.read(abuf)) > 0) adigest.update(abuf, 0, abr);
+                                                            ais.close();
+                                                            var ahb = adigest.digest();
+                                                            for (var aj = 0; aj < ahb.length; aj++) {
+                                                                var ab = ahb[aj] & 0xFF;
+                                                                if (ab < 16) ahex += "0";
+                                                                ahex += ab.toString(16);
+                                                            }
+                                                        }
+                                                    } catch(ahErr) {}
+                                                    var aNow = new Date();
+                                                    var aDecision = docDecisions[adoc.nodeRef.toString()];
+                                                    // Un document rejete par un signataire precedent ne recoit plus de decision
+                                                    var aDocStatus = '' + (adoc.properties['sg:signatureStatus'] || '');
+                                                    if (aDocStatus == 'REJECTED' && aDecision != 'Reject') {
+                                                        docResults += ' - ' + adoc.name + ' : DÉJÀ REJETÉ\n';
+                                                        continue;
+                                                    }
+                                                    var aAction = (outcome == 'Reject' && (aDecision == 'Reject' || !hasDecisions)) ? 'REJETE' : 'SIGNE';
+                                                    var aComment = (aAction == 'REJETE') ? (execution.getVariable('wf_rejectionComment') || '') : '';
+                                                    aComment = ('' + aComment).replace(/\|/g, '/');
+                                                    docResults += ' - ' + adoc.name + ' : ' + (aAction == 'REJETE' ? 'REJETÉ' : 'SIGNÉ') + '\n';
+                                                    var aWorkflowId = '' + execution.getProcessInstanceId();
+                                                    var aTaskId = '' + task.getId();
+                                                    var aEntry = fmtDate2(aNow) + '|' + currentSigner + '|' + fullName(currentSigner).replace(/\|/g, '/') + '|' + aAction + '|' + ahex + '|' + aTaskId + '|' + aComment + '|' + aWorkflowId;
+                                                    if (!adoc.hasAspect("sg:signature")) adoc.addAspect("sg:signature");
+                                                    var aLog = toAuditList(adoc.properties["sg:signatureLog"]);
+                                                    aLog.add(aEntry);
+                                                    adoc.properties["sg:signatureLog"] = aLog;
+                                                    adoc.properties["sg:initiatedBy"] = execution.getVariable('wf_initiatedBy');
+                                                    adoc.properties["sg:signatureWorkflowId"] = aWorkflowId;
+
+                                                    var sharedProof = companyhome.childByNamePath("Shared");
+                                                    if (sharedProof != null) {
+                                                        var proofRoot = sharedProof.childByNamePath("Preuves de signature");
+                                                        if (proofRoot == null) proofRoot = sharedProof.createNode("Preuves de signature", "cm:folder");
+                                                        if (proofRoot != null) {
+                                                            var adocId = adoc.nodeRef.toString().substring(adoc.nodeRef.toString().lastIndexOf('/') + 1);
+                                                            var asafeName = ('' + adoc.name).replace(/[\\\/:*?"<>|]/g, '-');
+                                                            var proofFolderName = asafeName + ' - ' + adocId;
+                                                            var proofFolder = proofRoot.childByNamePath(proofFolderName);
+                                                            if (proofFolder == null) proofFolder = proofRoot.createNode(proofFolderName, "cm:folder");
+                                                            if (proofFolder != null) {
+                                                                var proof = proofFolder.childByNamePath("preuve-signature.html");
+                                                                if (proof == null) proof = proofFolder.createNode("preuve-signature.html", "cm:content");
+                                                                if (proof != null) {
+                                                                    if (!proof.hasAspect("cm:versionable")) proof.addAspect("cm:versionable");
+                                                                    var rows2 = '';
+                                                                    for (var ri = 0; ri < aLog.size(); ri++) {
+                                                                        var rp = ('' + aLog.get(ri)).split('|');
+                                                                        var rc = (rp.length > 3 && rp[3] == 'SIGNE') ? '#1a7f37' : '#cf222e';
+                                                                        rows2 += '<tr><td>' + (ri + 1) + '</td><td>' + escH2(rp.length > 2 ? rp[2] : '') + ' <span class="muted">(' + escH2(rp.length > 1 ? rp[1] : '') + ')</span></td><td style="color:' + rc + ';font-weight:bold">' + escH2(rp.length > 3 ? rp[3] : '') + '</td><td>' + escH2(rp.length > 0 ? rp[0] : '') + '</td><td class="hash">' + escH2(rp.length > 4 ? rp[4] : '') + '</td><td>' + escH2(rp.length > 6 ? rp[6] : '') + '</td></tr>';
+                                                                    }
+                                                                    var proofStatus = (aAction == 'REJETE') ? 'REJETÉ' : 'EN COURS';
+                                                                    var proofColor = (aAction == 'REJETE') ? '#cf222e' : '#0969da';
+                                                                    var proofHtml2 = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preuve de signature - ' + escH2(adoc.name) + '</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{font-size:20px;color:#0a4d8c}h2{font-size:15px;margin-top:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:6px 8px;font-size:12px;text-align:left;vertical-align:top}th{background:#eef3f8}.meta td{border:none}.hash{font-family:monospace;font-size:10px;word-break:break-all}.muted,.foot{color:#666}.foot{margin-top:28px;font-size:11px;border-top:1px solid #ccc;padding-top:8px}@media print{body{margin:10px}}</style></head><body>' +
+                                                                        '<h1>Preuve de signature électronique</h1><p><b>MSP-GED — Ministère de la Santé et de la Population</b></p><table class="meta"><tr><td><b>Document</b></td><td>' + escH2(adoc.name) + '</td></tr><tr><td><b>Référence</b></td><td>' + escH2(adoc.nodeRef.toString()) + '</td></tr><tr><td><b>Workflow</b></td><td>' + escH2(aWorkflowId) + '</td></tr><tr><td><b>Initié par</b></td><td>' + escH2(fullName(execution.getVariable('wf_initiatedBy'))) + '</td></tr><tr><td><b>Statut</b></td><td style="color:' + proofColor + ';font-weight:bold">' + proofStatus + '</td></tr></table>' +
+                                                                        '<h2>Historique des signatures</h2><table><tr><th>#</th><th>Signataire</th><th>Action</th><th>Date / Heure</th><th>Empreinte SHA-256</th><th>Commentaire</th></tr>' + rows2 + '</table><div class="foot">Preuve mise à jour automatiquement par MSP-GED le ' + fmtDate2(aNow) + '.</div></body></html>';
+                                                                    var proofWriter = contentService2.getWriter(proof.nodeRef, org.alfresco.model.ContentModel.PROP_CONTENT, true);
+                                                                    proofWriter.setMimetype("text/html");
+                                                                    proofWriter.setEncoding("UTF-8");
+                                                                    proofWriter.putContent(proofHtml2);
+                                                                    proof.properties["cm:title"] = "Preuve de signature - " + adoc.name;
+                                                                    proof.save();
+                                                                    adoc.properties["sg:signatureProofNodeRef"] = proof.nodeRef.toString();
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    adoc.save();
+                                                }
+                                            }
+                                        } catch(logErr) {
+                                            if (typeof logger != 'undefined') logger.error("signatureLog failed: " + logErr);
+                                        }
 
                                         // Send email notification to initiator
                                         try {
@@ -219,12 +432,12 @@
                                                 if (outcome == 'Reject') {
                                                     subject = "[MSP-GED] " + signerName + " a rejeté : " + docName;
                                                     body = "Bonjour,\n\n" +
-                                                        "Nous voulons vous prévenir que " + signerName + " a REJETÉ le document « " + docName + " » que vous aviez soumis à la signature.\n\n" +
-                                                        "DÉTAILS DU REJET:\n" +
-                                                        "-----------------\n" +
-                                                        "Document  : " + docName + "\n" +
-                                                        "Rejeté par: " + signerName + "\n" +
-                                                        "Date      : " + new Date() + "\n";
+                                                        "Nous voulons vous prévenir que " + signerName + " a pris une décision sur votre demande de signature.\n\n" +
+                                                        "RÉSULTAT PAR DOCUMENT :\n" +
+                                                        "-----------------------\n" +
+                                                        docResults +
+                                                        "Décision prise par : " + signerName + "\n" +
+                                                        "Date               : " + new Date() + "\n";
                                                     var rejectComment = execution.getVariable('wf_rejectionComment');
                                                     if (rejectComment != null && rejectComment != '') {
                                                         body += "Motif du rejet: " + rejectComment + "\n";
@@ -241,12 +454,12 @@
                                                 } else {
                                                     subject = "[MSP-GED] " + signerName + " a signé : " + docName;
                                                     body = "Bonjour,\n\n" +
-                                                        "Nous voulons vous prévenir que " + signerName + " vient de SIGNER le document « " + docName + " » que vous aviez soumis à la signature.\n\n" +
-                                                        "DÉTAILS DE LA SIGNATURE:\n" +
-                                                        "------------------------\n" +
-                                                        "Document : " + docName + "\n" +
-                                                        "Signé par: " + signerName + "\n" +
-                                                        "Date     : " + new Date() + "\n\n" +
+                                                        "Nous voulons vous prévenir que " + signerName + " vient de signer votre demande de signature.\n\n" +
+                                                        "RÉSULTAT PAR DOCUMENT :\n" +
+                                                        "-----------------------\n" +
+                                                        docResults +
+                                                        "Signé par          : " + signerName + "\n" +
+                                                        "Date               : " + new Date() + "\n\n" +
                                                         "PROGRESSION DU WORKFLOW:\n" +
                                                         "------------------------\n";
                                                     var signersList = execution.getVariable('wf_signers');
@@ -328,10 +541,25 @@
                             var ctx = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext();
                             var taggingService = ctx.getBean('taggingService', org.alfresco.service.cmr.tagging.TaggingService);
 
+                            // Decisions par document : nodeRef=Sign;nodeRef=Reject
+                            var docDecisions = {};
+                            try {
+                                var rawDec = execution.getVariable('wf_docDecisions');
+                                if (rawDec != null && ('' + rawDec).length > 0) {
+                                    var dParts = ('' + rawDec).split(';');
+                                    for (var dp = 0; dp < dParts.length; dp++) {
+                                        var kv = dParts[dp].split('=');
+                                        if (kv.length == 2) docDecisions[kv[0]] = kv[1];
+                                    }
+                                }
+                            } catch(ddErr) {}
+
                             for (var i = 0; i < children.length; i++) {
                                 var doc = children[i];
-                                if (doc != null) {
-                                    doc.addAspect("sg:signature");
+                                // Ce point n'est atteint que si tous les documents sont rejetes.
+                                // Les docs deja marques REJECTED par un signataire precedent sont ignores.
+                                if (doc != null && ('' + (doc.properties['sg:signatureStatus'] || '')) != 'REJECTED') {
+                                    if (!doc.hasAspect("sg:signature")) doc.addAspect("sg:signature");
                                     doc.properties["sg:signatureStatus"] = "REJECTED";
                                     doc.properties["sg:rejectedBy"] = rejectedBy;
                                     doc.properties["sg:rejectionDate"] = new java.util.Date();
@@ -384,7 +612,8 @@
 
                             for (var i = 0; i < children.length; i++) {
                                 var doc = children[i];
-                                if (doc != null) {
+                                // Ne pas finaliser un document deja rejete par un signataire
+                                if (doc != null && ('' + (doc.properties['sg:signatureStatus'] || '')) != 'REJECTED') {
                                     var reader = contentService.getReader(doc.nodeRef, org.alfresco.model.ContentModel.PROP_CONTENT);
                                     var is = reader.getContentInputStream();
                                     var digest = Packages.java.security.MessageDigest.getInstance("SHA-256");
@@ -403,7 +632,7 @@
                                         hex += b.toString(16);
                                     }
 
-                                    doc.addAspect("sg:signature");
+                                    if (!doc.hasAspect("sg:signature")) doc.addAspect("sg:signature");
                                     doc.properties["sg:signatories"] = signers;
                                     doc.properties["sg:signatureDate"] = now;
                                     doc.properties["sg:documentHash"] = hex;
@@ -412,6 +641,86 @@
                                     doc.properties["sg:initiatedBy"] = initiatedBy;
                                     doc.save();
                                     taggingService.addTag(doc.nodeRef, "signé");
+
+                                    // Final proof and signed-documents library
+                                    try {
+                                        function escH(s) { return ('' + (s == null ? '' : s)).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+                                        function fmtD(dd) { function p(n){return (n<10?'0':'')+n;} return p(dd.getDate())+'/'+p(dd.getMonth()+1)+'/'+dd.getFullYear()+' '+p(dd.getHours())+':'+p(dd.getMinutes())+':'+p(dd.getSeconds()); }
+                                        function personName(userName) {
+                                            try {
+                                                var pn = people.getPerson(userName);
+                                                if (pn != null) {
+                                                    var pfn = ((pn.properties.firstName || '') + ' ' + (pn.properties.lastName || '')).trim();
+                                                    if (pfn != '') return pfn;
+                                                }
+                                            } catch(pe) {}
+                                            return '' + userName;
+                                        }
+                                        function auditList(value) {
+                                            var out = new java.util.ArrayList();
+                                            if (value == null) return out;
+                                            try {
+                                                for (var ai = 0; ai < value.size(); ai++) out.add('' + value.get(ai));
+                                                return out;
+                                            } catch(ae1) {}
+                                            try {
+                                                for (var aj = 0; aj < value.length; aj++) out.add('' + value[aj]);
+                                                if (out.size() > 0) return out;
+                                            } catch(ae2) {}
+                                            out.add('' + value);
+                                            return out;
+                                        }
+                                        var shared2 = companyhome.childByNamePath("Shared");
+                                        if (shared2 != null) {
+                                            var docId = doc.nodeRef.toString().substring(doc.nodeRef.toString().lastIndexOf('/') + 1);
+                                            var safeName = ('' + doc.name).replace(/[\\\/:*?"<>|]/g, '-');
+                                            var folderName = safeName + ' - ' + docId;
+                                            var proofRoot = shared2.childByNamePath("Preuves de signature");
+                                            if (proofRoot == null) proofRoot = shared2.createNode("Preuves de signature", "cm:folder");
+                                            var proofFolder = proofRoot != null ? proofRoot.childByNamePath(folderName) : null;
+                                            if (proofFolder == null && proofRoot != null) proofFolder = proofRoot.createNode(folderName, "cm:folder");
+                                            var proof = proofFolder != null ? proofFolder.childByNamePath("preuve-signature.html") : null;
+                                            if (proof == null && proofFolder != null) proof = proofFolder.createNode("preuve-signature.html", "cm:content");
+
+                                            var rowsHtml = '';
+                                            var slog = auditList(doc.properties["sg:signatureLog"]);
+                                            for (var si = 0; si < slog.size(); si++) {
+                                                var parts = ('' + slog.get(si)).split('|');
+                                                var rAction = parts.length > 3 ? parts[3] : '';
+                                                var badge = rAction == 'SIGNE' ? '#1a7f37' : '#cf222e';
+                                                rowsHtml += '<tr><td>' + (si+1) + '</td><td>' + escH(parts.length>2?parts[2]:'') + ' <span class="muted">(' + escH(parts.length>1?parts[1]:'') + ')</span></td><td style="color:' + badge + ';font-weight:bold">' + escH(rAction) + '</td><td>' + escH(parts.length>0?parts[0]:'') + '</td><td class="hash">' + escH(parts.length>4?parts[4]:'') + '</td><td>' + escH(parts.length>6?parts[6]:'') + '</td></tr>';
+                                            }
+                                            var signerNames = '';
+                                            for (var sn = 0; sn < signers.size(); sn++) signerNames += (sn>0?', ':'') + personName(signers.get(sn));
+                                            var workflowIdFinal = '' + execution.getProcessInstanceId();
+                                            var proofHtml = '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Preuve de signature - ' + escH(doc.name) + '</title><style>body{font-family:Arial,sans-serif;margin:30px;color:#222}h1{font-size:20px;color:#0a4d8c}h2{font-size:15px;margin-top:24px}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:6px 8px;font-size:12px;text-align:left;vertical-align:top}th{background:#eef3f8}.meta td{border:none}.hash{font-family:monospace;font-size:10px;word-break:break-all}.muted,.foot{color:#666}.foot{margin-top:28px;font-size:11px;border-top:1px solid #ccc;padding-top:8px}@media print{body{margin:10px}}</style></head><body>' +
+                                                '<h1>Preuve de signature électronique</h1><p><b>MSP-GED — Ministère de la Santé et de la Population</b></p><table class="meta"><tr><td><b>Document</b></td><td>' + escH(doc.name) + '</td></tr><tr><td><b>Référence</b></td><td>' + escH(doc.nodeRef.toString()) + '</td></tr><tr><td><b>Workflow</b></td><td>' + escH(workflowIdFinal) + '</td></tr><tr><td><b>Initié par</b></td><td>' + escH(personName(initiatedBy)) + '</td></tr><tr><td><b>Empreinte finale SHA-256</b></td><td class="hash">' + escH(hex) + '</td></tr><tr><td><b>Statut</b></td><td style="color:#1a7f37;font-weight:bold">SIGNÉ — ' + escH(signerNames) + '</td></tr></table>' +
+                                                '<h2>Historique des signatures</h2><table><tr><th>#</th><th>Signataire</th><th>Action</th><th>Date / Heure</th><th>Empreinte SHA-256</th><th>Commentaire</th></tr>' + rowsHtml + '</table><div class="foot">Preuve finalisée automatiquement par MSP-GED le ' + fmtD(new Date(now.getTime())) + '. Document de référence : ' + escH(doc.name) + '.</div></body></html>';
+                                            if (proof != null) {
+                                                if (!proof.hasAspect("cm:versionable")) proof.addAspect("cm:versionable");
+                                                var proofWriter = contentService.getWriter(proof.nodeRef, org.alfresco.model.ContentModel.PROP_CONTENT, true);
+                                                proofWriter.setMimetype("text/html");
+                                                proofWriter.setEncoding("UTF-8");
+                                                proofWriter.putContent(proofHtml);
+                                                proof.properties["cm:title"] = "Preuve de signature - " + doc.name;
+                                                proof.save();
+                                                doc.properties["sg:signatureProofNodeRef"] = proof.nodeRef.toString();
+                                            }
+                                            doc.properties["sg:signatureWorkflowId"] = workflowIdFinal;
+                                            doc.save();
+
+                                            var libRoot = shared2.childByNamePath("Documents signés");
+                                            if (libRoot == null) libRoot = shared2.createNode("Documents signés", "cm:folder");
+                                            var docFolder = libRoot != null ? libRoot.childByNamePath(folderName) : null;
+                                            if (docFolder == null && libRoot != null) docFolder = libRoot.createNode(folderName, "cm:folder");
+                                            if (docFolder != null) {
+                                                try { docFolder.addNode(doc); } catch(addDocErr) {}
+                                                if (proof != null) try { docFolder.addNode(proof); } catch(addProofErr) {}
+                                            }
+                                        }
+                                    } catch(libErr) {
+                                        if (typeof logger != 'undefined') logger.error("Documents signés library failed: " + libErr);
+                                    }
                                 }
                             }
 
@@ -426,7 +735,14 @@
                                     var docName = '';
                                     var docRef = '';
                                     if (children.length > 0) {
-                                        docName = children[0].name;
+                                        var names = [];
+                                        for (var cn = 0; cn < children.length; cn++) {
+                                            var cd = children[cn];
+                                            if (cd != null && ('' + (cd.properties['sg:signatureStatus'] || '')) != 'REJECTED') {
+                                                names.push('' + cd.name);
+                                            }
+                                        }
+                                        docName = names.join(' ; ');
                                         docRef = children[0].nodeRef.toString();
                                     }
                                     var notif = notifFolder.createNode("notif-completed-" + initiatedBy + "-" + Date.now(), "sg:notificationRecord");

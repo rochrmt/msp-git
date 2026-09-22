@@ -446,6 +446,25 @@
         });
     }
 
+    function ensureDashboardLink() {
+        var header = document.querySelector('.aca-sidenav-header');
+        if (!header) return;
+        var link = document.getElementById('msp-aca-dashboard-link');
+        if (!link) {
+            link = document.createElement('a');
+            link.id = 'msp-aca-dashboard-link';
+            link.className = 'msp-aca-dashboard-link';
+            link.href = '/share/page/';
+            link.title = 'Voir le dashboard Share';
+            link.setAttribute('aria-label', 'Voir le dashboard Share');
+            link.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3h8v8H3V3Zm10 0h8v5h-8V3ZM3 13h8v8H3v-8Zm10-3h8v11h-8V10Z"/></svg><span>Voir le dashboard</span>';
+            header.appendChild(link);
+        }
+        var sidenav = header.parentElement && header.parentElement.parentElement;
+        var compact = sidenav && sidenav.getBoundingClientRect().width < 180;
+        link.className = compact ? 'msp-aca-dashboard-link msp-aca-dashboard-link-compact' : 'msp-aca-dashboard-link';
+    }
+
     function waitForHeader() {
         var attempts = 0;
         var maxAttempts = 30;
@@ -454,6 +473,7 @@
             var header = document.querySelector('app-header, [data-automation-id="app-header"], .app-header, header, .aca-header');
             if (header) {
                 clearInterval(interval);
+                ensureDashboardLink();
                 createBell();
                 fetchNotifications();
                 setInterval(fetchNotifications, POLL_INTERVAL);
@@ -466,6 +486,7 @@
     }
 
     function init() {
+        window.setInterval(ensureDashboardLink, 2000);
         // Request browser notification permission
         if ('Notification' in window && Notification.permission === 'default') {
             Notification.requestPermission();

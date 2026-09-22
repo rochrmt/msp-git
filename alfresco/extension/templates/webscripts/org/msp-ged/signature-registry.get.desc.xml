@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>Registre des signatures</shortname>
+    <description>Printable registry of all documents processed by the signature workflow</description>
+    <url>/msp-ged/signature-registry</url>
+    <format default="html">extension</format>
+    <authentication>user</authentication>
+    <transaction>none</transaction>
+</webscript>

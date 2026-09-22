@@ -14,6 +14,16 @@
     <repository-url>${PROTOCOL}://${SERVER_NAME}:${SHARE_PORT}/alfresco</repository-url>
   </config>
 
+   <config evaluator="string-compare" condition="Workflow">
+      <hidden-workflows>
+         <workflow name="activiti$activitiAdhoc" />
+         <workflow name="activiti$activitiReview" />
+         <workflow name="activiti$activitiReviewPooled" />
+         <workflow name="activiti$activitiParallelReview" />
+         <workflow name="activiti$activitiParallelGroupReview" />
+      </hidden-workflows>
+   </config>
+
    <!-- Branding MSP-GED : footer/about/login -->
    <config evaluator="string-compare" condition="Edition" replace="true">
       <footer>
@@ -49,7 +59,7 @@
                <set id="" appearance="title" label-id="workflow.set.general" />
                <set id="info" appearance="" template="/org/alfresco/components/form/2-column-set.ftl" />
                <set id="assignee" appearance="title" label="Signataires" />
-               <set id="items" appearance="title" label-id="workflow.set.items" />
+               <set id="items" appearance="title" label="Documents à signer" />
                <set id="other" appearance="title" label-id="workflow.set.other" />
 
                <field id="bpm:workflowDescription" label="Description">
@@ -67,7 +77,12 @@
                   <control template="/org/alfresco/components/form/controls/workflow/priority.ftl" />
                </field>
                <field id="bpm:assignees" label="Signataires" set="assignee" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" label="Documents" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                     <control-param name="selectActionLabel">Choisir dans la bibliothèque</control-param>
+                  </control>
+               </field>
             </appearance>
          </form>
       </forms>
@@ -88,7 +103,7 @@
                <set id="" appearance="title" label="Détails de la signature" />
                <set id="info" appearance="" template="/org/alfresco/components/form/2-column-set.ftl" />
                <set id="assignee" appearance="title" label="Signataires" />
-               <set id="items" appearance="title" label-id="workflow.set.items" />
+               <set id="items" appearance="title" label="Documents à signer" />
                <set id="other" appearance="title" label-id="workflow.set.other" />
 
                <field id="bpm:workflowDescription" label="Description">
@@ -106,7 +121,12 @@
                   <control template="/org/alfresco/components/form/controls/workflow/priority.ftl" />
                </field>
                <field id="bpm:assignees" label="Signataires" set="assignee" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" label="Documents" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                     <control-param name="selectActionLabel">Choisir dans la bibliothèque</control-param>
+                  </control>
+               </field>
             </appearance>
          </form>
       </forms>
@@ -145,7 +165,11 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
             </appearance>
          </form>
          <form>
@@ -157,6 +181,7 @@
                <show id="bpm:taskId" />
                <show id="bpm:status" />
                <show id="packageItems" />
+               <show id="sg:docDecisions" />
                <show id="bpm:comment" />
                <show id="sg:signOutcome" />
             </field-visibility>
@@ -181,7 +206,14 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
+               <field id="sg:docDecisions" label="Décision par document" set="items">
+                  <control template="/docdecisions.ftl" />
+               </field>
                <field id="bpm:comment" label="Commentaire" set="response">
                   <control template="/org/alfresco/components/form/controls/textarea.ftl">
                      <control-param name="saveLineBreaks">true</control-param>
@@ -233,7 +265,11 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
                <field id="sg:signatureStatus" label="Statut" set="signature-set" read-only="true" />
                <field id="sg:signatories" label="Signataires" set="signature-set" read-only="true" />
                <field id="sg:documentHash" label="Empreinte SHA-256" set="signature-set" read-only="true" />
@@ -275,7 +311,11 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
                <field id="sg:signatureStatus" label="Statut" set="signature-set" read-only="true" />
                <field id="sg:signatories" label="Signataires" set="signature-set" read-only="true" />
                <field id="sg:documentHash" label="Empreinte SHA-256" set="signature-set" read-only="true" />
@@ -322,7 +362,11 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
                <field id="sg:signatureStatus" label="Statut" set="signature-set" read-only="true" />
                <field id="sg:rejectedBy" label="Rejeté par" set="signature-set" read-only="true" />
                <field id="sg:rejectionDate" label="Date de rejet" set="signature-set" read-only="true" />
@@ -364,7 +408,11 @@
                   <control template="/org/alfresco/components/form/controls/info.ftl" />
                </field>
                <field id="bpm:status" set="progress" />
-               <field id="packageItems" set="items" />
+               <field id="packageItems" set="items">
+                  <control template="/packageitems-upload.ftl">
+                     <control-param name="displayMode">list</control-param>
+                  </control>
+               </field>
                <field id="sg:signatureStatus" label="Statut" set="signature-set" read-only="true" />
                <field id="sg:rejectedBy" label="Rejeté par" set="signature-set" read-only="true" />
                <field id="sg:rejectionDate" label="Date de rejet" set="signature-set" read-only="true" />

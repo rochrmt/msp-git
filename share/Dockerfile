@@ -34,9 +34,21 @@ RUN sed -i "s|\${PROTOCOL}|${PROTOCOL}|g; s|\${SERVER_NAME}|${SERVER_NAME}|g; s|
 # Override minimal du head resources (stock 25.2 + script signature)
 COPY site-webscripts/ /usr/local/tomcat/shared/classes/alfresco/web-extension/site-webscripts/
 
+# Override classpath de share-header.lib.js : le webscript header l'importe via
+# "classpath:/alfresco/site-webscripts/..." (classloader), PAS via la registry Surf
+# (web-extension/). Il doit donc exister au vrai chemin classpath pour etre pris en compte.
+COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
+     /usr/local/tomcat/shared/classes/alfresco/site-webscripts/org/alfresco/share/imports/share-header.lib.js
+# On ecrase aussi la version embarquee dans le WAR (ordre de delegation classloader incertain)
+COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
+     /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/site-webscripts/org/alfresco/share/imports/share-header.lib.js
+
 # Asset JS servi via /share/res/components/header/signature-notifications-share.js
 # ("/res/*" de Share resout depuis la racine du webapp, pas un dossier res/ physique)
 COPY web-extension/signature-notifications-share.js /usr/local/tomcat/webapps/share/components/header/signature-notifications-share.js
+COPY web-extension/signature-proof-share.js /usr/local/tomcat/webapps/share/components/header/signature-proof-share.js
+COPY web-extension/msp-dashboard.js /usr/local/tomcat/webapps/share/components/dashboard/msp-dashboard.js
+COPY web-extension/msp-dashboard.css /usr/local/tomcat/webapps/share/components/dashboard/msp-dashboard.css
 
 # Branding MSP-GED : remplacer "Alfresco" par "MSP-GED" dans tous les fichiers de messages
 RUN for f in /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/messages/slingshot*.properties; do \

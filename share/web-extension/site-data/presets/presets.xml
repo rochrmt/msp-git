@@ -56,7 +56,7 @@
       </pages>
    </preset>
 
-   <!-- MSP-GED : dashboard utilisateur reduit a Mes taches + Mes documents -->
+   <!-- MSP-GED : dashboard utilisateur reduit a Mes taches + Mes sites -->
    <preset id="user-dashboard">
       <components>
          <!-- title -->
@@ -77,7 +77,7 @@
              <scope>page</scope>
              <region-id>component-2-1</region-id>
              <source-id>user/${userid}/dashboard</source-id>
-             <url>/components/dashlets/my-documents</url>
+             <url>/components/dashlets/my-sites</url>
              <properties>
                 <height>240</height>
              </properties>

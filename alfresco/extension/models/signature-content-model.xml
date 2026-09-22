@@ -40,6 +40,9 @@
                         </constraint>
                     </constraints>
                 </property>
+                <property name="sg:docDecisions">
+                    <type>d:text</type>
+                </property>
             </properties>
             <overrides>
                 <property name="bpm:packageItemActionGroup">
@@ -128,6 +131,22 @@
                 </property>
                 <property name="sg:initiatedBy">
                     <title>Workflow Initiated By</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:signatureLog">
+                    <title>Signature Audit Log</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                    <multiple>true</multiple>
+                </property>
+                <property name="sg:signatureWorkflowId">
+                    <title>Signature Workflow ID</title>
+                    <type>d:text</type>
+                    <protected>true</protected>
+                </property>
+                <property name="sg:signatureProofNodeRef">
+                    <title>Signature Proof NodeRef</title>
                     <type>d:text</type>
                     <protected>true</protected>
                 </property>

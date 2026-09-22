@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>Dashboard Fix - replace my-documents dashlet with my-sites</shortname>
+    <description>Replaces the my-documents dashlet by my-sites on all user dashboards (surf:component nodes under surf-config/components)</description>
+    <url>/msp-ged/dashboard-fix?dryRun={dryRun?}</url>
+    <format default="json">argument</format>
+    <authentication>admin</authentication>
+    <transaction>required</transaction>
+</webscript>

@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>MSP-GED Dashboard Summary</shortname>
+    <description>Returns the current user's dashboard statistics and recent documents</description>
+    <url>/msp-ged/dashboard-summary</url>
+    <format default="json">extension</format>
+    <authentication>user</authentication>
+    <transaction>none</transaction>
+</webscript>

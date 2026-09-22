@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<webscript>
+   <shortname>Grant package item access</shortname>
+   <description>Accorde la permission Editor a l'assignee d'une tache sur les documents du package workflow.</description>
+   <url>/msp-ged/perm-grant?taskId={taskId}</url>
+   <authentication>admin</authentication>
+   <format default="json">argument</format>
+   <family>MSP-GED</family>
+</webscript>

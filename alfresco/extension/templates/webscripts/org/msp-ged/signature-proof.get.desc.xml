@@ -1,0 +1,8 @@
+<webscript>
+    <shortname>Signature Proof</shortname>
+    <description>Returns the signature audit trail (signer, date, hash) of a document</description>
+    <url>/msp-ged/signature-proof?nodeRef={nodeRef}</url>
+    <format default="json">argument</format>
+    <authentication>user</authentication>
+    <transaction>required</transaction>
+</webscript>

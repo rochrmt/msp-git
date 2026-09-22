@@ -70,6 +70,59 @@
       .adf-app-title .adf-app-logo, .adf-app-logo {
           height: 50px !important;
       }
+      .aca-sidenav-header {
+          position: relative !important;
+      }
+      .aca-sidenav-header-title-text {
+          display: none !important;
+      }
+      .aca-sidenav-header-title-logo {
+          flex: 1 1 auto !important;
+          min-width: 0 !important;
+      }
+      .aca-sidenav-header-title aca-toolbar {
+          flex: 0 0 auto !important;
+      }
+      .aca-sidenav-header-title .aca-user-menu-button {
+          visibility: visible !important;
+          opacity: 1 !important;
+      }
+      .msp-aca-dashboard-link {
+          position: absolute;
+          right: 16px;
+          bottom: 4px;
+          left: 16px;
+          z-index: 5;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          height: 28px;
+          border-radius: 6px;
+          background: #1264a3;
+          color: #fff !important;
+          font: 600 12px/1 Arial, sans-serif;
+          text-decoration: none !important;
+          box-shadow: 0 2px 7px rgba(18, 100, 163, 0.24);
+          transition: background 150ms ease, box-shadow 150ms ease;
+      }
+      .msp-aca-dashboard-link:hover,
+      .msp-aca-dashboard-link:focus {
+          background: #0a4d80;
+          box-shadow: 0 4px 10px rgba(18, 100, 163, 0.3);
+      }
+      .msp-aca-dashboard-link svg {
+          width: 16px;
+          height: 16px;
+          fill: currentColor;
+      }
+      .msp-aca-dashboard-link-compact {
+          right: 8px;
+          left: 8px;
+      }
+      .msp-aca-dashboard-link-compact span {
+          display: none;
+      }
     </style>
   <link rel="stylesheet" href="styles.css"></head>
   <body>
@@ -82,5 +135,5 @@
         </div>
       </app-root>
     </main>
-  <script src="signature-notifications.js?v=2"></script><script src="runtime.js" type="module"></script><script src="polyfills.js" type="module"></script><script src="scripts.js" defer></script><script src="vendor.js" type="module"></script><script src="main.js" type="module"></script></body>
+  <script src="signature-notifications.js?v=3"></script><script src="runtime.js" type="module"></script><script src="polyfills.js" type="module"></script><script src="scripts.js" defer></script><script src="vendor.js" type="module"></script><script src="main.js" type="module"></script></body>
 </html>
