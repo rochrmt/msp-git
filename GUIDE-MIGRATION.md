@@ -35,10 +35,10 @@ tar czf /tmp/le.tgz traefik/letsencrypt
 > Archive les certificats Let's Encrypt existants (compte ACME + clés). Permet au serveur de test de servir `https://ged-msp.com` sans redemander de certificats.
 
 ```bash
-scp /tmp/prod.sql /tmp/alf-repo-data.tgz /tmp/le.tgz root@<IP-NOUVEAU-SERVEUR>:/tmp/
+scp /tmp/prod.sql /tmp/alf-repo-data.tgz /tmp/le.tgz root@212.47.79.112:/tmp/
 ```
 
-> Transfère les 3 fichiers vers le nouveau serveur. Remplacer `<IP-NOUVEAU-SERVEUR>` par la vraie IP.
+> Transfère les 3 fichiers vers le nouveau serveur (IP : `212.47.79.112`).
 
 ---
 
@@ -149,7 +149,7 @@ docker compose ps
 Sur **ta machine Windows** (PowerShell admin) :
 
 ```powershell
-Add-Content "C:\Windows\System32\drivers\etc\hosts" "`n<IP-NOUVEAU-SERVEUR>`tged-msp.com"
+Add-Content "C:\Windows\System32\drivers\etc\hosts" "`n212.47.79.112`tged-msp.com"
 ```
 
 > Force **ton** poste à résoudre `ged-msp.com` vers le serveur de test. Les autres utilisateurs restent sur la prod (DNS inchangé). Tester ensuite : login, dashboard, notifications, workflow de signature. Si le SMTP est coupé, vérifier que le workflow avance (pas que le mail arrive) ; si SMTP actif, vérifier le contenu des mails reçus.
