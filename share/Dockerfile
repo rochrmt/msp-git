@@ -82,5 +82,5 @@ RUN for f in /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/messages/s
       sed -i "s/^page.myWorkflows.description=.*/page.myWorkflows.description=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
       sed -i "s/^header.my-workflows.label=.*/header.my-workflows.label=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
       sed -i "s/^header.my-workflows.description=.*/header.my-workflows.description=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
-      sed -i 's/^message.loginautherror=.*/message.loginautherror=Vos informations d\\\\u0027authentification sont incorrectes ou le service est momentan\\\\u00e9ment indisponible./' "$f"; \
+      sed -i "s/^message.loginautherror=.*/message.loginautherror=Vos informations d'authentification sont incorrectes ou le service est momentan\\\\u00e9ment indisponible./" "$f"; \
     done
