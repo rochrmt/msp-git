@@ -43,6 +43,17 @@ COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
 COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
      /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/site-webscripts/org/alfresco/share/imports/share-header.lib.js
 
+# Labels du header (menu Taches > "Signatures que j'ai initiees") : bundles
+# classpath resolus via le meme mecanisme que share-header.lib.js
+COPY site-webscripts/org/alfresco/share/imports/share-header.lib.properties \
+     site-webscripts/org/alfresco/share/imports/share-header.lib_fr.properties \
+     site-webscripts/org/alfresco/share/imports/share-header.lib_en.properties \
+     /usr/local/tomcat/shared/classes/alfresco/site-webscripts/org/alfresco/share/imports/
+COPY site-webscripts/org/alfresco/share/imports/share-header.lib.properties \
+     site-webscripts/org/alfresco/share/imports/share-header.lib_fr.properties \
+     site-webscripts/org/alfresco/share/imports/share-header.lib_en.properties \
+     /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/site-webscripts/org/alfresco/share/imports/
+
 # Bundles de messages MSP-GED (workflow -> signature) : la resolution msg() des
 # webscripts passe par le classpath du webapp (WEB-INF/classes), pas par la
 # registry Surf. On ecrase les versions embarquees dans le WAR.

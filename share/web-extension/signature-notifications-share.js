@@ -426,9 +426,90 @@
         }, 50);
     }
 
+    /* ---- Pages listes tâches/signatures : nettoyage + badges cartes ---- */
+    var MONTHS_FR = {
+        janvier: 0, 'f\u00e9vrier': 1, mars: 2, avril: 3, mai: 4, juin: 5,
+        juillet: 6, 'ao\u00fbt': 7, septembre: 8, octobre: 9, novembre: 10,
+        'd\u00e9cembre': 11
+    };
+
+    function isListPage() {
+        return /page\/(my-tasks|my-workflows)/.test(location.pathname);
+    }
+
+    function parseFrDate(text) {
+        var m = /(\d{1,2})\s+([^\s,]+)\s*,?\s*(\d{4})/.exec((text || '').trim());
+        if (!m) return null;
+        var mon = MONTHS_FR[m[2].toLowerCase()];
+        if (mon == null) return null;
+        return new Date(+m[3], mon, +m[1]);
+    }
+
+    function decorateCards() {
+        if (!isListPage()) return;
+
+        // Supprime le tbody message + toute ligne "Chargement..." restée
+        document.querySelectorAll('tbody.yui-dt-message').forEach(function(tb) {
+            tb.style.display = 'none';
+        });
+        document.querySelectorAll('.yui-dt-loading').forEach(function(el) {
+            var tr = el.closest ? el.closest('tr') : null;
+            if (tr) tr.style.display = 'none';
+            else el.style.display = 'none';
+        });
+        // Filet de sécurité : masquer par contenu texte (Chargement.../Loading...)
+        document.querySelectorAll('.yui-dt td .yui-dt-liner, .yui-dt td').forEach(function(el) {
+            var t = (el.textContent || '').trim();
+            if (/^(chargement|loading)/i.test(t)) {
+                var tr = el.closest ? el.closest('tr') : null;
+                if (tr) tr.style.display = 'none';
+            }
+        });
+
+        document.querySelectorAll('.yui-dt tbody.yui-dt-data > tr').forEach(function(tr) {
+            if (tr.classList.contains('sg-card-done')) return;
+            tr.classList.add('sg-card-done');
+
+            var started = tr.querySelector('div.started span');
+            if (!started) return;
+
+            // Ligne de date compacte dans la carte
+            started.parentNode.classList.add('sg-date-line');
+
+            // Badge "Récent" si la date d'initiation a moins de 7 jours
+            var d = parseFrDate(started.textContent);
+            if (!d) return;
+            tr.dataset.sgDate = d.getTime();
+            var age = (Date.now() - d.getTime()) / 864e5;
+            if (age >= 0 && age <= 7) {
+                tr.classList.add('sg-recent');
+                var liner = tr.querySelector('.yui-dt-liner');
+                if (liner && !liner.querySelector('.sg-badge-recent')) {
+                    var b = document.createElement('span');
+                    b.className = 'sg-badge-recent';
+                    b.textContent = 'R\u00e9cent';
+                    liner.appendChild(b);
+                }
+            }
+        });
+
+        // Tri des cartes : plus récentes en premier (date d'initiation décroissante)
+        document.querySelectorAll('.tasks.yui-dt tbody.yui-dt-data, .workflows.yui-dt tbody.yui-dt-data').forEach(function(tb) {
+            var rows = [].slice.call(tb.querySelectorAll(':scope > tr'));
+            if (rows.length < 2) return;
+            var sorted = rows.slice().sort(function(a, b) {
+                return (+b.dataset.sgDate || 0) - (+a.dataset.sgDate || 0);
+            });
+            var changed = sorted.some(function(r, i) { return r !== rows[i]; });
+            if (changed) sorted.forEach(function(r) { tb.appendChild(r); });
+        });
+    }
+
     function start() {
         onPage();
         patchStartWorkflow();
+        decorateCards();
+        setInterval(decorateCards, 1500);
         if (document.body) {
             observer.observe(document.body, { childList: true, subtree: true });
         }

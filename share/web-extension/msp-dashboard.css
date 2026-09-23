@@ -1300,3 +1300,800 @@ div.title h1,
 #alfresco-myworkflows .yui-b {
     min-width: 0;
 }
+
+/* =================================================================
+   Listes tâches/signatures — lignes en cartes (v3)
+   ================================================================= */
+
+/* Le conteneur devient transparent : les cartes portent le design */
+.task-list .tasks,
+.workflow-list .workflows {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0;
+    padding: 0;
+    overflow: visible;
+}
+
+/* Espacement vertical entre lignes = écart entre cartes */
+.task-list .tasks .yui-dt table,
+.workflow-list .yui-dt table {
+    border-collapse: separate !important;
+    border-spacing: 0 10px !important;
+}
+
+.task-list .tasks .yui-dt tr,
+.workflow-list .yui-dt tr {
+    border-bottom: none !important;
+}
+
+/* Chaque cellule de ligne = une carte */
+.task-list .tasks .yui-dt td,
+.workflow-list .yui-dt td {
+    background: #fff;
+    border-top: 1px solid #e0e8ee;
+    border-bottom: 1px solid #e0e8ee;
+    padding: 12px 10px !important;
+    vertical-align: top;
+    transition: box-shadow .15s, border-color .15s;
+}
+
+.task-list .tasks .yui-dt tr td:first-child,
+.workflow-list .yui-dt tr td:first-child {
+    border-left: 1px solid #e0e8ee;
+    border-radius: 10px 0 0 10px;
+}
+
+.task-list .tasks .yui-dt tr td:last-child,
+.workflow-list .yui-dt tr td:last-child {
+    border-right: 1px solid #e0e8ee;
+    border-radius: 0 10px 10px 0;
+}
+
+.task-list .tasks .yui-dt tr:hover td,
+.workflow-list .yui-dt tr:hover td {
+    border-color: #b8d4e6;
+    box-shadow: 0 2px 8px rgba(30, 95, 140, .12);
+}
+
+/* Titre du workflow/tâche plus lisible */
+.task-list .yui-dt-col-title .yui-dt-liner a,
+.workflow-list .yui-dt-col-title .yui-dt-liner a {
+    font-size: 14px;
+    font-weight: 700;
+    color: #173e5c;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+/* Description plus discrète */
+.task-list .yui-dt-liner div.description span,
+.workflow-list .yui-dt-liner div.description span {
+    color: #8b98a5;
+    font-size: 11px;
+}
+
+/* Échéance en pillule visible */
+.task-list .yui-dt-liner div.due span,
+.workflow-list .yui-dt-liner div.due span {
+    background: #fff3e0;
+    color: #b25d09;
+    border-radius: 9px;
+    padding: 1px 8px;
+    font-weight: 600;
+}
+
+/* =================================================================
+   Listes tâches/signatures — layout carte horizontal (v4)
+   Titre + statut en haut, métadonnées en chips sur une ligne,
+   description discrète en dessous.
+   ================================================================= */
+
+/* Le liner devient un flex qui réorganise les blocs */
+.task-list .tasks .yui-dt td.yui-dt-col-title .yui-dt-liner,
+.workflow-list .yui-dt td.yui-dt-col-title .yui-dt-liner {
+    display: flex !important;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px 10px;
+    padding: 6px 4px !important;
+}
+
+/* Ligne 1 : titre à gauche, statut à droite */
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    order: 1;
+    flex: 1 1 auto;
+    font-size: 14.5px;
+    font-weight: 700;
+    color: #173e5c;
+    margin-bottom: 0;
+    min-width: 180px;
+}
+
+.task-list .yui-dt-liner div.status,
+.workflow-list .yui-dt-liner div.status {
+    order: 2;
+    flex: 0 0 auto;
+}
+
+/* Statut en badge coloré */
+.task-list .yui-dt-liner div.status label,
+.workflow-list .yui-dt-liner div.status label {
+    display: none;
+}
+
+.task-list .yui-dt-liner div.status span,
+.workflow-list .yui-dt-liner div.status span {
+    background: var(--msp-primary, #1e5f8c);
+    color: #fff !important;
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+/* Badge non-assignée reste à droite aussi */
+.task-list .yui-dt-liner div.unassigned,
+.workflow-list .yui-dt-liner div.unassigned {
+    order: 2;
+    flex: 0 0 auto;
+}
+
+/* Ligne 2 : métadonnées en chips horizontales */
+.task-list .yui-dt-liner div.due,
+.task-list .yui-dt-liner div.started,
+.task-list .yui-dt-liner div.ended,
+.task-list .yui-dt-liner div.initiator,
+.task-list .yui-dt-liner div.type,
+.workflow-list .yui-dt-liner div.due,
+.workflow-list .yui-dt-liner div.started,
+.workflow-list .yui-dt-liner div.ended,
+.workflow-list .yui-dt-liner div.type {
+    order: 5;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: #f1f6fa;
+    border: 1px solid #e3ecf2;
+    border-radius: 8px;
+    padding: 3px 10px;
+    font-size: 11px;
+    white-space: nowrap;
+}
+
+.task-list .yui-dt-liner div label,
+.workflow-list .yui-dt-liner div label {
+    color: #8b98a5;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 9px;
+    letter-spacing: .5px;
+    margin: 0;
+}
+
+.task-list .yui-dt-liner div span,
+.workflow-list .yui-dt-liner div span {
+    color: #3d556b;
+    font-weight: 600;
+}
+
+/* Échéance : chip orange pour attirer l'œil */
+.task-list .yui-dt-liner div.due,
+.workflow-list .yui-dt-liner div.due {
+    background: #fff3e0;
+    border-color: #ffe0b2;
+}
+
+.task-list .yui-dt-liner div.due label,
+.workflow-list .yui-dt-liner div.due label {
+    color: #c07c1a;
+}
+
+.task-list .yui-dt-liner div.due span,
+.workflow-list .yui-dt-liner div.due span {
+    color: #b25d09;
+    background: transparent;
+    padding: 0;
+}
+
+/* Type : chip bleu clair */
+.task-list .yui-dt-liner div.type,
+.workflow-list .yui-dt-liner div.type {
+    background: #e8f2fb;
+    border-color: #cfe3f2;
+}
+
+.task-list .yui-dt-liner div.type span,
+.workflow-list .yui-dt-liner div.type span {
+    color: #1e5f8c;
+}
+
+/* Description : ligne pleine largeur en dessous, discrète */
+.task-list .yui-dt-liner div.description,
+.workflow-list .yui-dt-liner div.description {
+    order: 9;
+    flex: 0 0 100%;
+    margin-top: 2px;
+    border-top: 1px dashed #e8eef3;
+    padding-top: 5px;
+}
+
+.task-list .yui-dt-liner div.description span,
+.workflow-list .yui-dt-liner div.description span {
+    color: #8b98a5;
+    font-size: 11px;
+    font-weight: 400;
+    font-style: italic;
+}
+
+.task-list .yui-dt-liner div.description label,
+.workflow-list .yui-dt-liner div.description label {
+    display: none;
+}
+
+/* =================================================================
+   Listes tâches/signatures — GRILLE DE CARTES (v5)
+   Petites cartes côte à côte : titre en grand + personne.
+   ================================================================= */
+
+/* La table devient une grille de cartes */
+.task-list .tasks .yui-dt table,
+.workflow-list .yui-dt table {
+    display: block !important;
+    border-spacing: 0 !important;
+    border-collapse: collapse !important;
+}
+
+.task-list .tasks .yui-dt thead,
+.workflow-list .yui-dt thead {
+    display: none !important;
+}
+
+.task-list .tasks .yui-dt tbody,
+.workflow-list .yui-dt tbody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(215px, 1fr));
+    gap: 14px;
+    padding: 4px 2px;
+}
+
+/* Chaque ligne = une carte */
+.task-list .tasks .yui-dt tbody tr,
+.workflow-list .yui-dt tbody tr {
+    display: flex !important;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #fff;
+    border: 1px solid #e0e8ee;
+    border-radius: 12px;
+    min-height: 118px;
+    box-shadow: 0 1px 4px rgba(30, 60, 90, .07);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.task-list .tasks .yui-dt tbody tr:hover,
+.workflow-list .yui-dt tbody tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 95, 140, .16);
+    border-color: #b8d4e6;
+    background: #fff;
+}
+
+/* Cellules : pleine largeur dans la carte, pas de bordures */
+.task-list .tasks .yui-dt tbody tr td,
+.workflow-list .yui-dt tbody tr td {
+    display: block;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+/* Masquer les colonnes techniques (icônes/id) */
+.task-list .tasks .yui-dt tbody tr td.yui-dt-col-id,
+.workflow-list .yui-dt tbody tr td.yui-dt-col-id,
+.task-list .tasks .yui-dt tbody tr td.yui-dt-col-priority,
+.workflow-list .yui-dt tbody tr td.yui-dt-col-priority {
+    display: none !important;
+}
+
+/* Le liner : bloc simple, padding carte */
+.task-list .tasks .yui-dt td .yui-dt-liner,
+.workflow-list .yui-dt td .yui-dt-liner {
+    display: block !important;
+    padding: 16px 16px 14px !important;
+    height: 100%;
+}
+
+/* Titre : grand et gras */
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    display: block;
+    font-size: 15.5px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: #173e5c;
+    margin: 0 0 12px;
+    min-height: 38px;
+    text-decoration: none;
+}
+
+.task-list .yui-dt-col-title .yui-dt-liner > a:hover,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a:hover {
+    color: var(--msp-primary, #1e5f8c);
+}
+
+/* Personne : visible, taille correcte */
+.task-list .yui-dt-liner div.initiator,
+.workflow-list .yui-dt-liner div.initiator {
+    display: flex !important;
+    align-items: center;
+    gap: 7px;
+    order: unset;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin-top: auto;
+    font-size: 12.5px;
+}
+
+.task-list .yui-dt-liner div.initiator label,
+.workflow-list .yui-dt-liner div.initiator label {
+    color: #9aa8b4;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+
+.task-list .yui-dt-liner div.initiator span,
+.workflow-list .yui-dt-liner div.initiator span {
+    color: #2c4a63;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+/* Tout le reste masqué */
+.task-list .yui-dt-liner div.due,
+.task-list .yui-dt-liner div.started,
+.task-list .yui-dt-liner div.ended,
+.task-list .yui-dt-liner div.status,
+.task-list .yui-dt-liner div.type,
+.task-list .yui-dt-liner div.description,
+.task-list .yui-dt-liner div.unassigned,
+.workflow-list .yui-dt-liner div.due,
+.workflow-list .yui-dt-liner div.started,
+.workflow-list .yui-dt-liner div.ended,
+.workflow-list .yui-dt-liner div.status,
+.workflow-list .yui-dt-liner div.type,
+.workflow-list .yui-dt-liner div.description,
+.workflow-list .yui-dt-liner div.unassigned {
+    display: none !important;
+}
+
+/* =================================================================
+   Correctifs grille de cartes (v6)
+   ================================================================= */
+
+/* Les deux templates ont des ids inverses : appliquer le fond aux deux */
+#alfresco-mytasks {
+    background: #f2f6f9;
+    padding: 16px;
+    border-radius: 0 0 10px 10px;
+}
+
+/* La zone liste occupe toute la largeur dispo */
+.task-list .yui-dt,
+.workflow-list .yui-dt,
+.task-list .tasks,
+.workflow-list .workflows {
+    width: 100% !important;
+}
+
+/* Masquer aussi la colonne d'actions (liens) dans les cartes */
+.task-list .tasks .yui-dt tbody tr td.yui-dt-col-name,
+.workflow-list .yui-dt tbody tr td.yui-dt-col-name {
+    display: none !important;
+}
+
+/* Carte : la cellule titre remplit toute la hauteur */
+.task-list .tasks .yui-dt tbody tr td.yui-dt-col-title,
+.workflow-list .yui-dt tbody tr td.yui-dt-col-title {
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+}
+
+.task-list .tasks .yui-dt td.yui-dt-col-title .yui-dt-liner,
+.workflow-list .yui-dt td.yui-dt-col-title .yui-dt-liner {
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+}
+
+/* Titre : remonter en haut de carte */
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    flex: 0 0 auto;
+    min-height: 0;
+    margin-bottom: 10px;
+}
+
+/* Personne : toujours en bas de carte */
+.task-list .yui-dt-liner div.initiator,
+.workflow-list .yui-dt-liner div.initiator {
+    margin-top: auto;
+    padding-top: 10px;
+    border-top: 1px solid #eef3f6;
+}
+
+/* =================================================================
+   Correctif largeur grille (v7)
+   ================================================================= */
+
+/* Forcer toute la chaîne à occuper 100% de la colonne contenu */
+.task-list .tasks,
+.workflow-list .workflows,
+.task-list .tasks .yui-dt,
+.workflow-list .workflows .yui-dt,
+.task-list .tasks .yui-dt table,
+.workflow-list .workflows .yui-dt table {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    float: none !important;
+}
+
+.workflow-list .workflows {
+    margin: 0 !important;
+}
+
+.task-list .tasks .yui-dt tbody,
+.workflow-list .workflows .yui-dt tbody {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)) !important;
+    gap: 14px;
+    width: 100% !important;
+}
+
+/* Ligne de chargement / vide : pleine largeur, sans style carte */
+.task-list .tasks .yui-dt tbody tr.yui-dt-loading,
+.task-list .tasks .yui-dt tbody tr.yui-dt-empty,
+.task-list .tasks .yui-dt tbody tr.yui-dt-error,
+.workflow-list .workflows .yui-dt tbody tr.yui-dt-loading,
+.workflow-list .workflows .yui-dt tbody tr.yui-dt-empty,
+.workflow-list .workflows .yui-dt tbody tr.yui-dt-error {
+    grid-column: 1 / -1;
+    display: block;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    min-height: 0;
+    padding: 8px 4px;
+    color: #8b98a5;
+}
+
+/* =================================================================
+   Grille centrée + suppression fantôme "Chargement..." (v8)
+   ================================================================= */
+
+/* La ligne "Chargement..." n'apparaît plus du tout */
+.task-list .tasks .yui-dt tbody tr.yui-dt-loading,
+.workflow-list .workflows .yui-dt tbody tr.yui-dt-loading {
+    display: none !important;
+}
+
+/* Ligne "Aucune tâche/signature" : message simple, pleine largeur */
+.task-list .tasks .yui-dt tbody tr.yui-dt-empty,
+.workflow-list .workflows .yui-dt tbody tr.yui-dt-empty {
+    grid-column: 1 / -1;
+    display: block;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    min-height: 0;
+    text-align: center;
+    color: #8b98a5;
+    padding: 20px 0;
+}
+
+/* Cartes à largeur fixe, grille centrée dans la zone */
+.task-list .tasks .yui-dt tbody,
+.workflow-list .workflows .yui-dt tbody {
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: center !important;
+    gap: 16px;
+}
+
+.task-list .tasks .yui-dt tbody tr,
+.workflow-list .workflows .yui-dt tbody tr {
+    width: 205px;
+}
+
+/* =================================================================
+   FIX DÉFINITIF — tbody.yui-dt-data = grille, tbody.yui-dt-message = caché
+   ================================================================= */
+
+/* Le tbody "message" (Chargement.../vide) : totalement masqué */
+.task-list .tasks .yui-dt tbody.yui-dt-message,
+.workflow-list .workflows .yui-dt tbody.yui-dt-message {
+    display: none !important;
+}
+
+/* Le tbody de données : grille de cartes centrée */
+.task-list .tasks .yui-dt tbody.yui-dt-data,
+.workflow-list .workflows .yui-dt tbody.yui-dt-data {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: center !important;
+    gap: 16px;
+    width: 100% !important;
+}
+
+/* Cartes dans le tbody de données uniquement */
+.task-list .tasks .yui-dt tbody.yui-dt-data > tr,
+.workflow-list .workflows .yui-dt tbody.yui-dt-data > tr {
+    display: flex !important;
+    flex-direction: column;
+    background: #fff;
+    border: 1px solid #e0e8ee;
+    border-radius: 12px;
+    min-height: 118px;
+    width: 205px;
+    box-shadow: 0 1px 4px rgba(30, 60, 90, .07);
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.task-list .tasks .yui-dt tbody.yui-dt-data > tr:hover,
+.workflow-list .workflows .yui-dt tbody.yui-dt-data > tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 95, 140, .16);
+    border-color: #b8d4e6;
+    background: #fff;
+}
+
+/* =================================================================
+   Contenu des cartes (v9) : titre, date, badge Récent, personne
+   ================================================================= */
+
+/* Ordre visuel : titre > date > badge > personne */
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    order: 1;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 0;
+    margin-bottom: 8px;
+    font-size: 15px;
+    line-height: 1.35;
+}
+
+/* Date d'initiation : ligne discrète sous le titre */
+.task-list .yui-dt-liner div.started.sg-date-line,
+.workflow-list .yui-dt-liner div.started.sg-date-line {
+    order: 2;
+    display: flex !important;
+    align-items: baseline;
+    gap: 5px;
+    background: transparent;
+    border: none;
+    padding: 0;
+    margin: 0 0 6px;
+    font-size: 11px;
+    white-space: normal;
+}
+
+.task-list .yui-dt-liner div.started.sg-date-line label,
+.workflow-list .yui-dt-liner div.started.sg-date-line label {
+    color: #a5b2bd;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.task-list .yui-dt-liner div.started.sg-date-line span,
+.workflow-list .yui-dt-liner div.started.sg-date-line span {
+    color: #6b7d8c;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+/* Badge Récent : pilule verte */
+.task-list .yui-dt-liner .sg-badge-recent,
+.workflow-list .yui-dt-liner .sg-badge-recent {
+    order: 3;
+    align-self: flex-start;
+    background: #e6f4ea;
+    color: #1a7f37;
+    border: 1px solid #b7e0c2;
+    border-radius: 10px;
+    padding: 2px 9px;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    margin-bottom: 8px;
+}
+
+/* Carte récente : léger liseré vert à gauche */
+.task-list .tasks .yui-dt tbody.yui-dt-data > tr.sg-recent,
+.workflow-list .workflows .yui-dt tbody.yui-dt-data > tr.sg-recent {
+    border-left: 3px solid #1a7f37;
+}
+
+/* Personne : toujours en dernier, en bas de carte */
+.task-list .yui-dt-liner div.initiator,
+.workflow-list .yui-dt-liner div.initiator {
+    order: 9;
+}
+
+/* =================================================================
+   GRILLE DE CARTES — sélecteurs corrigés (v10)
+   .yui-dt est posé SUR .tasks/.workflows (même élément)
+   ================================================================= */
+
+/* Table en bloc pleine largeur */
+.task-list .tasks.yui-dt > table,
+.workflow-list .workflows.yui-dt > table {
+    display: block !important;
+    width: 100% !important;
+    border-spacing: 0 !important;
+}
+
+.task-list .tasks.yui-dt > table > thead,
+.workflow-list .workflows.yui-dt > table > thead {
+    display: none !important;
+}
+
+/* tbody "Chargement..."/vide : masqué */
+.task-list .tasks.yui-dt > table > tbody.yui-dt-message,
+.workflow-list .workflows.yui-dt > table > tbody.yui-dt-message {
+    display: none !important;
+}
+
+/* tbody données : grille centrée de cartes fixes */
+.task-list .tasks.yui-dt > table > tbody.yui-dt-data,
+.workflow-list .workflows.yui-dt > table > tbody.yui-dt-data {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, 205px) !important;
+    justify-content: center !important;
+    gap: 16px;
+    width: 100% !important;
+    padding: 4px 2px;
+}
+
+/* Chaque ligne = carte */
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr {
+    display: flex !important;
+    flex-direction: column;
+    width: 205px;
+    min-height: 118px;
+    background: #fff;
+    border: 1px solid #e0e8ee;
+    border-radius: 12px;
+    box-shadow: 0 1px 4px rgba(30, 60, 90, .07);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s, border-color .15s;
+}
+
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr:hover,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(30, 95, 140, .16);
+    border-color: #b8d4e6;
+    background: #fff;
+}
+
+/* Cellules : empilées, sans bordures ; colonnes icône et actions masquées */
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr > td,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr > td {
+    display: block;
+    border: none !important;
+    padding: 0 !important;
+    background: transparent !important;
+}
+
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr > td.yui-dt-col-id,
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr > td.yui-dt-col-name,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr > td.yui-dt-col-id,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr > td.yui-dt-col-name {
+    display: none !important;
+}
+
+/* Cellule titre = contenu de carte pleine hauteur */
+.task-list .tasks.yui-dt tbody tr > td.yui-dt-col-title,
+.workflow-list .workflows.yui-dt tbody tr > td.yui-dt-col-title {
+    flex: 1 1 auto;
+    display: flex !important;
+    flex-direction: column;
+}
+
+.task-list .tasks.yui-dt td.yui-dt-col-title .yui-dt-liner,
+.workflow-list .workflows.yui-dt td.yui-dt-col-title .yui-dt-liner {
+    display: flex !important;
+    flex-direction: column;
+    flex: 1 1 auto;
+    height: 100%;
+    padding: 14px 16px !important;
+}
+
+/* =================================================================
+   Cartes plus grandes + tri récent→ancien (v11)
+   ================================================================= */
+
+.task-list .tasks.yui-dt > table > tbody.yui-dt-data,
+.workflow-list .workflows.yui-dt > table > tbody.yui-dt-data {
+    grid-template-columns: repeat(auto-fill, 250px) !important;
+    gap: 18px;
+}
+
+.task-list .tasks.yui-dt tbody.yui-dt-data > tr,
+.workflow-list .workflows.yui-dt tbody.yui-dt-data > tr {
+    width: 250px;
+    min-height: 150px;
+}
+
+.task-list .tasks.yui-dt td.yui-dt-col-title .yui-dt-liner,
+.workflow-list .workflows.yui-dt td.yui-dt-col-title .yui-dt-liner {
+    padding: 18px 18px 14px !important;
+}
+
+/* Titre : plus grand, jusqu'à 3 lignes, mots longs coupés proprement */
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    font-size: 16px;
+    line-height: 1.35;
+    -webkit-line-clamp: 3;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    margin-bottom: 10px;
+}
+
+/* Date un peu plus lisible */
+.task-list .yui-dt-liner div.started.sg-date-line,
+.workflow-list .yui-dt-liner div.started.sg-date-line {
+    font-size: 12px;
+}
+
+.task-list .yui-dt-liner div.started.sg-date-line span,
+.workflow-list .yui-dt-liner div.started.sg-date-line span {
+    font-size: 12px;
+}
+
+/* Personne un peu plus grande */
+.task-list .yui-dt-liner div.initiator span,
+.workflow-list .yui-dt-liner div.initiator span {
+    font-size: 13.5px;
+}
+
+/* =================================================================
+   Titres longs : pas de coupure — la carte grandit en hauteur (v12)
+   ================================================================= */
+
+.task-list .yui-dt-col-title .yui-dt-liner > a,
+.workflow-list .yui-dt-col-title .yui-dt-liner > a {
+    display: block;
+    -webkit-line-clamp: unset;
+    -webkit-box-orient: unset;
+    overflow: visible;
+    max-height: none;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+/* Les cartes d'une même ligne s'alignent en haut (hauteurs variables OK) */
+.task-list .tasks.yui-dt > table > tbody.yui-dt-data,
+.workflow-list .workflows.yui-dt > table > tbody.yui-dt-data {
+    align-items: start;
+}
