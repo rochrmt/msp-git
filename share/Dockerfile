@@ -43,6 +43,12 @@ COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
 COPY site-webscripts/org/alfresco/share/imports/share-header.lib.js \
      /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/site-webscripts/org/alfresco/share/imports/share-header.lib.js
 
+# Bundles de messages MSP-GED (workflow -> signature) : la resolution msg() des
+# webscripts passe par le classpath du webapp (WEB-INF/classes), pas par la
+# registry Surf. On ecrase les versions embarquees dans le WAR.
+COPY site-webscripts/org/alfresco/components/workflow/ \
+     /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/site-webscripts/org/alfresco/components/workflow/
+
 # Asset JS servi via /share/res/components/header/signature-notifications-share.js
 # ("/res/*" de Share resout depuis la racine du webapp, pas un dossier res/ physique)
 COPY web-extension/signature-notifications-share.js /usr/local/tomcat/webapps/share/components/header/signature-notifications-share.js
@@ -59,4 +65,10 @@ RUN for f in /usr/local/tomcat/webapps/share/WEB-INF/classes/alfresco/messages/s
       sed -i 's/page.title=Alfresco/page.title=MSP-GED/' "$f"; \
       sed -i 's|<a href="http://www.alfresco.com">Alfresco Software</a> Inc.|MSP-GED|g' "$f"; \
       sed -i "s/Alfresco Content Services may not be available/MSP-GED may not be available/" "$f"; \
+      sed -i 's/^page.startWorkflow.title=.*/page.startWorkflow.title=Initier des signatures/' "$f"; \
+      sed -i 's/^page.startWorkflow.description=.*/page.startWorkflow.description=Initier une nouvelle demande de signature/' "$f"; \
+      sed -i "s/^page.myWorkflows.title=.*/page.myWorkflows.title=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
+      sed -i "s/^page.myWorkflows.description=.*/page.myWorkflows.description=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
+      sed -i "s/^header.my-workflows.label=.*/header.my-workflows.label=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
+      sed -i "s/^header.my-workflows.description=.*/header.my-workflows.description=Signatures que j'ai initi\\\\u00e9es/" "$f"; \
     done

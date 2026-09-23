@@ -1030,3 +1030,273 @@ body.msp-modern-dashboard #bd .my-tasks .yui-pg-pages a:hover {
     border-color: var(--msp-primary);
     background: #e8f3fb;
 }
+
+/* =================================================================
+   Page Mes tâches / Mes signatures (task-list + workflow-list)
+   ================================================================= */
+
+/* Barre de titre + filtre */
+.task-list .task-list-bar,
+.task-list .task-list-bar-bottom,
+.workflow-list .workflow-list-bar,
+.workflow-list .workflow-list-bar-bottom {
+    background: #fff !important;
+    border: 1px solid #e0e8ee;
+    border-radius: 10px;
+    padding: 8px 14px !important;
+    margin-bottom: 12px;
+}
+
+.task-list .task-list-bar h2,
+.workflow-list .workflow-list-bar h2 {
+    color: var(--msp-primary, #1e5f8c);
+    font-size: 17px;
+    font-weight: 700;
+    line-height: 28px;
+}
+
+/* Tableau des tâches */
+.task-list .tasks,
+.workflow-list .workflows {
+    background: #fff;
+    border: 1px solid #e0e8ee;
+    border-radius: 10px;
+    overflow: hidden;
+    padding: 4px 0;
+}
+
+.task-list .tasks .yui-dt table,
+.workflow-list .yui-dt table {
+    border-collapse: collapse;
+}
+
+.task-list .tasks .yui-dt tr,
+.workflow-list .yui-dt tr {
+    border-bottom: 1px solid #eef3f6;
+    transition: background .15s;
+}
+
+.task-list .tasks .yui-dt tr:hover,
+.task-list .tasks .yui-dt tr.yui-dt-highlighted,
+.workflow-list .yui-dt tr:hover {
+    background: #f0f7fc !important;
+}
+
+.task-list .tasks .yui-dt td .yui-dt-liner,
+.workflow-list .yui-dt td .yui-dt-liner {
+    padding: 10px 8px !important;
+}
+
+/* Titre de tâche */
+.task-list .tasks .yui-dt-col-title .yui-dt-liner a,
+.workflow-list .yui-dt-col-title .yui-dt-liner a {
+    font-size: 13px;
+    font-weight: 600;
+    color: #1a3a52;
+}
+
+.task-list .tasks .yui-dt-col-title .yui-dt-liner a:hover {
+    color: var(--msp-primary, #1e5f8c);
+    text-decoration: underline;
+}
+
+/* Meta infos : échéance, dates, statut */
+.task-list .yui-dt-liner div.due,
+.task-list .yui-dt-liner div.started,
+.task-list .yui-dt-liner div.ended,
+.task-list .yui-dt-liner div.status,
+.task-list .yui-dt-liner div.initiator,
+.workflow-list .yui-dt-liner div.due,
+.workflow-list .yui-dt-liner div.started,
+.workflow-list .yui-dt-liner div.ended {
+    font-size: 11px;
+    color: #667;
+}
+
+.task-list .yui-dt-liner div label,
+.workflow-list .yui-dt-liner div label {
+    color: #9aa8b4;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 9.5px;
+    letter-spacing: .4px;
+}
+
+/* Badge "Non assignée" */
+.task-list .unassigned-task,
+.workflow-list .unassigned-task {
+    background: #fde7e9 !important;
+    color: #b71c1c !important;
+    border-radius: 10px;
+    padding: 1px 8px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Paginateur en pilules (pages tâches) */
+.task-list .yui-pg-pages a,
+.task-list .yui-pg-page,
+.workflow-list .yui-pg-pages a,
+.workflow-list .yui-pg-page {
+    border: 1px solid #d7e3ec;
+    border-radius: 14px;
+    padding: 1px 9px;
+    margin: 0 2px;
+    font-size: 11px;
+    color: #4a6b80;
+    background: #fff;
+}
+
+.task-list .yui-pg-current-page,
+.task-list .yui-pg-current,
+.workflow-list .yui-pg-current-page,
+.workflow-list .yui-pg-current {
+    background: var(--msp-primary, #1e5f8c) !important;
+    color: #fff !important;
+    border-radius: 14px;
+    padding: 1px 9px;
+    border: 1px solid var(--msp-primary, #1e5f8c);
+}
+
+.task-list .yui-pg-pages a:hover,
+.workflow-list .yui-pg-pages a:hover {
+    border-color: var(--msp-primary, #1e5f8c);
+    background: #e8f3fb;
+}
+
+/* =================================================================
+   Pages Mes tâches / Signatures initiées — beautification v2
+   ================================================================= */
+
+/* Fond de page + espacement */
+#alfresco-myworkflows {
+    background: #f2f6f9;
+    padding: 16px;
+    border-radius: 0 0 10px 10px;
+}
+
+/* Titre de page */
+div.title h1,
+.alfresco-title h1,
+#bd h1.title {
+    color: var(--msp-primary, #1e5f8c);
+    font-size: 20px;
+    font-weight: 700;
+    border-bottom: none;
+}
+
+/* --- Colonne des filtres : cartes --- */
+#alf-filters {
+    padding-right: 14px;
+}
+
+#alf-filters .filter {
+    background: #fff;
+    border: 1px solid #e0e8ee;
+    border-radius: 10px;
+    padding: 10px 12px 8px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(30, 60, 90, .05);
+}
+
+#alf-filters .filter h2 {
+    color: #6b8299;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .7px;
+    margin: 0 0 6px;
+    padding: 0;
+    border-bottom: 1px solid #eef3f6;
+    padding-bottom: 6px;
+}
+
+#alf-filters .filter ul.filterLink {
+    margin: 0;
+    padding: 0;
+}
+
+#alf-filters .filter ul.filterLink li {
+    list-style: none;
+    margin: 2px 0;
+}
+
+#alf-filters .filter ul.filterLink li a.filter-link {
+    display: block;
+    padding: 5px 10px;
+    border-radius: 7px;
+    font-size: 12px;
+    color: #38536b;
+    text-decoration: none;
+    transition: background .15s, color .15s;
+}
+
+#alf-filters .filter ul.filterLink li a.filter-link:hover {
+    background: #eef6fc;
+    color: var(--msp-primary, #1e5f8c);
+}
+
+#alf-filters .filter ul.filterLink li span.selected a.filter-link,
+#alf-filters .filter ul.filterLink li a.filter-link.selected,
+#alf-filters .filter ul.filterLink li.selected a.filter-link {
+    background: var(--msp-primary, #1e5f8c);
+    color: #fff;
+    font-weight: 600;
+    box-shadow: 0 1px 3px rgba(30, 95, 140, .3);
+}
+
+/* --- Toolbar : bouton principal --- */
+.task-list-toolbar .start-workflow button,
+.workflow-list-toolbar .start-workflow button,
+.start-workflow button {
+    background: var(--msp-primary, #1e5f8c) !important;
+    border: none !important;
+    color: #fff !important;
+    border-radius: 18px !important;
+    padding: 7px 18px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(30, 95, 140, .35);
+    transition: background .15s, box-shadow .15s, transform .1s;
+}
+
+.start-workflow button:hover {
+    background: #174a6e !important;
+    box-shadow: 0 3px 8px rgba(30, 95, 140, .45);
+    transform: translateY(-1px);
+}
+
+/* --- Liste : lignes en "cartes" --- */
+.task-list .tasks .yui-dt tr,
+.workflow-list .yui-dt tr {
+    border-bottom: 1px solid #eef3f6;
+    transition: background .15s, box-shadow .15s;
+}
+
+.task-list .tasks .yui-dt tr:hover,
+.workflow-list .yui-dt tr:hover {
+    background: #f4f9fd !important;
+    box-shadow: inset 3px 0 0 var(--msp-primary, #1e5f8c);
+}
+
+/* Type / statut en chips */
+.task-list .yui-dt-liner div.type span,
+.task-list .yui-dt-liner div.status span {
+    background: #eef3f7;
+    border-radius: 9px;
+    padding: 0 7px;
+    font-weight: 600;
+    color: #4a6b80;
+}
+
+/* Séparateur de la barre du bas */
+.task-list .task-list-bar-bottom span.separator,
+.workflow-list .workflow-list-bar-bottom span.separator {
+    color: #cdd8e0;
+}
+
+/* Poignée de redimensionnement de la colonne filtres */
+#alfresco-myworkflows .yui-b {
+    min-width: 0;
+}

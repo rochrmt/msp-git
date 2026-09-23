@@ -38,6 +38,14 @@
                             if (typeof bpm_workflowDueDate != 'undefined') task.dueDate = bpm_workflowDueDate;
                             if (typeof bpm_workflowPriority != 'undefined') task.priority = bpm_workflowPriority;
 
+                            var baseUrl = "https://ged-msp.com";
+                            try {
+                                var _sa = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext().getBean("sysAdminParams");
+                                var _proto = _sa.getShareProtocol();
+                                var _port = _sa.getSharePort();
+                                baseUrl = _proto + "://" + _sa.getShareHost() + (((_proto == "https" && _port == 443) || (_proto == "http" && _port == 80)) ? "" : ":" + _port);
+                            } catch(e) {}
+
                             // Notify the assigned signatory: ASSIGNMENT event
                             try {
                                 var authUtil = null;
@@ -132,7 +140,7 @@
                                                     "---------------\n" +
                                                     "Veuillez examiner le document puis le SIGNER ou le REJETER.\n\n" +
                                                     "Accéder à la tâche :\n" +
-                                                    "http://localhost/share/page/task-edit?taskId=activiti$" + taskId + "\n\n" +
+                                                    baseUrl + "/share/page/task-edit?taskId=activiti$" + taskId + "\n\n" +
                                                     "Cordialement,\n" +
                                                     initiatorName + "\n" +
                                                     "(message envoyé automatiquement via MSP-GED)";
@@ -166,6 +174,14 @@
                 <activiti:taskListener event="complete" class="org.alfresco.repo.workflow.activiti.tasklistener.ScriptTaskListener">
                     <activiti:field name="script">
                         <activiti:string><![CDATA[
+                            var baseUrl = "https://ged-msp.com";
+                            try {
+                                var _sa = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext().getBean("sysAdminParams");
+                                var _proto = _sa.getShareProtocol();
+                                var _port = _sa.getSharePort();
+                                baseUrl = _proto + "://" + _sa.getShareHost() + (((_proto == "https" && _port == 443) || (_proto == "http" && _port == 80)) ? "" : ":" + _port);
+                            } catch(e) {}
+
                             var outcome = task.getVariable('sg_signOutcome');
                             execution.setVariable('sg_signOutcome', outcome);
                             var currentSigner = signAssignee.properties.userName;
@@ -447,7 +463,7 @@
                                                         "-------------------\n" +
                                                         "Le workflow a été interrompu. Le document n'a pas été signé.\n\n" +
                                                         "Pour consulter le document, connectez-vous à MSP-GED:\n" +
-                                                        "http://localhost/share/\n\n" +
+                                                        baseUrl + "/share/\n\n" +
                                                         "Cordialement,\n" +
                                                         signerName + "\n" +
                                                         "(message envoyé automatiquement via MSP-GED)";
@@ -468,7 +484,7 @@
                                                     }
                                                     body += "Le workflow continue avec les signataires restants.\n\n" +
                                                         "Pour consulter le document, connectez-vous à MSP-GED:\n" +
-                                                        "http://localhost/share/\n\n" +
+                                                        baseUrl + "/share/\n\n" +
                                                         "Cordialement,\n" +
                                                         signerName + "\n" +
                                                         "(message envoyé automatiquement via MSP-GED)";
@@ -594,6 +610,13 @@
                 <activiti:field name="script">
                     <activiti:string>
                         <![CDATA[
+                        var baseUrl = "https://ged-msp.com";
+                        try {
+                            var _sa = Packages.org.springframework.web.context.ContextLoader.getCurrentWebApplicationContext().getBean("sysAdminParams");
+                            var _proto = _sa.getShareProtocol();
+                            var _port = _sa.getSharePort();
+                            baseUrl = _proto + "://" + _sa.getShareHost() + (((_proto == "https" && _port == 443) || (_proto == "http" && _port == 80)) ? "" : ":" + _port);
+                        } catch(e) {}
                         var authUtil = Packages.org.alfresco.repo.security.authentication.AuthenticationUtil;
                         authUtil.pushAuthentication();
                         authUtil.setFullyAuthenticatedUser(authUtil.SYSTEM_USER_NAME);
@@ -794,7 +817,7 @@
                                                 "Le document est maintenant marqué comme SIGNÉ.\n" +
                                                 "Un hash SHA-256 a été calculé pour garantir l'intégrité du document.\n\n" +
                                                 "Pour consulter le document et ses métadonnées de signature, connectez-vous à MSP-GED:\n" +
-                                                "http://localhost/\n\n" +
+                                                baseUrl + "/share/\n\n" +
                                                 "Cordialement,\n" +
                                                 "MSP-GED — Ministère de la Santé et de la Population";
                                             mailAction.executeAsynchronously(notif);

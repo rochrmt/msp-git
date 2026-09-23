@@ -321,3 +321,122 @@
         init();
     }
 })();
+
+/* === MSP-GED : accès direct au workflow de signature ===
+   - Renomme "Démarrer un workflow" -> "Initier des signatures" partout
+     (dashlet, toolbars, titre de page, action document)
+   - Sur /page/start-workflow : sélectionne automatiquement l'unique
+     workflow visible (Signature de document TDR) -> formulaire direct */
+(function() {
+    'use strict';
+
+    var SG_LABEL = 'Initier des signatures';
+    var RELABEL_MAP = [
+        ['D\u00e9marrer un workflow', SG_LABEL],
+        ['Mes workflows', 'Mes signatures'],
+        ['My Workflows', 'Mes signatures'],
+        ['Afficher le workflow', 'Afficher la signature']
+    ];
+
+    function relabelTextNodes(root) {
+        var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null, false);
+        var nodes = [];
+        var n;
+        while ((n = walker.nextNode())) {
+            if (n.nodeValue) nodes.push(n);
+        }
+        nodes.forEach(function(t) {
+            RELABEL_MAP.forEach(function(pair) {
+                if (t.nodeValue.indexOf(pair[0]) !== -1) {
+                    t.nodeValue = t.nodeValue.split(pair[0]).join(pair[1]);
+                }
+            });
+        });
+    }
+
+    function onPage() {
+        relabelTextNodes(document.body);
+        RELABEL_MAP.forEach(function(pair) {
+            if (document.title.indexOf(pair[0]) !== -1) {
+                document.title = document.title.split(pair[0]).join(pair[1]);
+            }
+        });
+    }
+
+    // Contenu dynamique (actions doclib, menus YUI) : observer les ajouts
+    var observer = new MutationObserver(function(muts) {
+        muts.forEach(function(m) {
+            for (var i = 0; i < m.addedNodes.length; i++) {
+                var nd = m.addedNodes[i];
+                if (nd.nodeType === 1) relabelTextNodes(nd);
+                else if (nd.nodeType === 3 && nd.nodeValue) {
+                    RELABEL_MAP.forEach(function(pair) {
+                        if (nd.nodeValue.indexOf(pair[0]) !== -1) {
+                            nd.nodeValue = nd.nodeValue.split(pair[0]).join(pair[1]);
+                        }
+                    });
+                }
+            }
+        });
+    });
+
+    // Sélection automatique sur /page/start-workflow quand un seul workflow
+    // est visible (les autres sont masqués par share-config). Deux mécanismes :
+    // 1) patch du prototype si on attrape la classe avant onReady
+    // 2) sinon, récupération de l'instance déjà initialisée via ComponentManager
+    //    et déclenchement direct de la sélection
+    function patchStartWorkflow() {
+        if (!/page\/start-workflow/.test(location.pathname)) return;
+        var done = false;
+        var tries = 0;
+
+        function selectSingle(comp) {
+            if (done) return;
+            var defs = comp.options.workflowDefinitions || [];
+            if (defs.length === 1) {
+                done = true;
+                comp.onWorkflowSelectChange('click', [null, { index: 0 }]);
+            }
+        }
+
+        var timer = setInterval(function() {
+            if (done || ++tries > 200) { clearInterval(timer); return; }
+
+            var C = window.Alfresco && Alfresco.component && Alfresco.component.StartWorkflow;
+            if (C && !C.prototype._sgAutoPatched) {
+                C.prototype._sgAutoPatched = true;
+                var orig = C.prototype.onReady;
+                C.prototype.onReady = function() {
+                    orig.call(this);
+                    selectSingle(this);
+                };
+            }
+
+            // Instance déjà créée et initialisée ? Déclencher directement.
+            var btn = document.querySelector('[id$="-workflow-definition-button"]');
+            if (btn) {
+                var htmlId = btn.id.replace(/-workflow-definition-button.*$/, '');
+                var comp = Alfresco.util && Alfresco.util.ComponentManager &&
+                    Alfresco.util.ComponentManager.get(htmlId);
+                if (comp && comp.widgets && comp.widgets.workflowDefinitionMenuButton) {
+                    selectSingle(comp);
+                    if (done) clearInterval(timer);
+                }
+            }
+        }, 50);
+    }
+
+    function start() {
+        onPage();
+        patchStartWorkflow();
+        if (document.body) {
+            observer.observe(document.body, { childList: true, subtree: true });
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', start);
+    } else {
+        start();
+    }
+})();

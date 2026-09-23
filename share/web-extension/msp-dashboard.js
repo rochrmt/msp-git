@@ -58,7 +58,7 @@
         overview.innerHTML =
             '<div class="msp-dashboard-welcome">' +
                 '<div class="msp-welcome-copy"><span class="msp-eyebrow">Espace personnel</span><h1>Bonjour, <span id="msp-dashboard-name">' + escapeHtml(username) + '</span></h1><p>Retrouvez en un coup d’œil vos tâches, vos espaces et vos documents.</p><span class="msp-today">' + escapeHtml(todayLabel()) + '</span></div>' +
-                '<div class="msp-quick-actions"><a class="msp-action-primary" href="' + pageUrl('start-workflow') + '">Démarrer un workflow</a><a class="msp-action-secondary" href="' + pageUrl('context/mine/myfiles') + '">Accéder à mes fichiers</a><a class="msp-action-secondary" href="/share/proxy/alfresco/msp-ged/signature-registry" target="_blank">Registre des signatures</a></div>' +
+                '<div class="msp-quick-actions"><a class="msp-action-primary" href="' + pageUrl('start-workflow') + '">Initier des signatures</a><a class="msp-action-secondary" href="' + pageUrl('context/mine/myfiles') + '">Accéder à mes fichiers</a><a class="msp-action-secondary" href="/share/proxy/alfresco/msp-ged/signature-registry" target="_blank">Registre des signatures</a></div>' +
             '</div>' +
             '<div class="msp-stat-grid">' +
                 statCard('activeTasks', 'active', 'Tâches en cours', 'À traiter maintenant', pageUrl('my-tasks#filter=workflows|active'), 'blue') +
