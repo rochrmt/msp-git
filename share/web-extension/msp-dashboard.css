@@ -2097,3 +2097,28 @@ div.title h1,
 .workflow-list .workflows.yui-dt > table > tbody.yui-dt-data {
     align-items: start;
 }
+
+/* =================================================================
+   Dashboard : Mes tâches + Mes sites côte à côte, 50/50 (v13)
+   ================================================================= */
+
+.msp-dashboard-grid > div[class*="yui-g"] {
+    display: flex !important;
+    gap: 18px;
+    align-items: stretch;
+}
+
+.msp-dashboard-grid > div[class*="yui-g"] > .yui-u {
+    flex: 1 1 0;
+    float: none !important;
+    width: auto !important;
+    margin: 0 !important;
+    min-width: 0;
+}
+
+/* Les dashlets conservées remplissent leur colonne */
+.msp-dashboard-grid .dashlet.my-tasks,
+.msp-dashboard-grid .dashlet.my-sites {
+    height: 100%;
+    margin-bottom: 0;
+}

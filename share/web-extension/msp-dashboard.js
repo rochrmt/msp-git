@@ -97,6 +97,19 @@
             var siteTitle = sites.querySelector('.title');
             if (siteTitle) siteTitle.textContent = 'Mes sites';
         }
+
+        // Masquer toutes les autres dashlets (ex. "Mes documents" / docsummary)
+        // et leurs colonnes devenues vides — ne garder que Mes tâches + Mes sites
+        var keep = [tasks, sites];
+        grid.querySelectorAll('.dashlet').forEach(function(d) {
+            if (keep.indexOf(d) !== -1) return;
+            var col = closestColumn(d);
+            d.style.display = 'none';
+            if (col && !col.querySelector('.dashlet:not([style*="display: none"])')) {
+                col.style.display = 'none';
+            }
+        });
+
         grid.className += ' msp-dashboard-grid';
     }
 
