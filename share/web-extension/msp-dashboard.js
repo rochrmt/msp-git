@@ -110,6 +110,28 @@
             }
         });
 
+        // Si les deux dashlets restantes sont dans la MEME colonne (layout
+        // sauvegardé de l'utilisateur), les réorganiser côte à côte dans une
+        // ligne flex insérée à la place
+        if (tasks && sites) {
+            var tCol = closestColumn(tasks);
+            var sCol = closestColumn(sites);
+            if (tCol && tCol === sCol) {
+                var blockOf = function(dashlet, col) {
+                    var n = dashlet;
+                    while (n.parentNode && n.parentNode !== col) n = n.parentNode;
+                    return n;
+                };
+                var row = document.createElement('div');
+                row.className = 'msp-dashlet-row';
+                var tBlock = blockOf(tasks, tCol);
+                var sBlock = blockOf(sites, tCol);
+                tCol.insertBefore(row, tBlock);
+                row.appendChild(tBlock);
+                row.appendChild(sBlock);
+            }
+        }
+
         grid.className += ' msp-dashboard-grid';
     }
 

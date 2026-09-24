@@ -169,8 +169,8 @@
 
 <@markup id="resources">
    <#-- Use this "markup id" to add in a extension's resources -->
-   <link rel="stylesheet" type="text/css" href="${url.context}/res/components/dashboard/msp-dashboard.css?v=16" />
-   <script type="text/javascript" src="${url.context}/res/components/dashboard/msp-dashboard.js?v=4"></script>
+   <link rel="stylesheet" type="text/css" href="${url.context}/res/components/dashboard/msp-dashboard.css?v=17" />
+   <script type="text/javascript" src="${url.context}/res/components/dashboard/msp-dashboard.js?v=5"></script>
    <script type="text/javascript" src="${url.context}/res/components/header/signature-notifications-share.js?v=13"></script>
    <script type="text/javascript" src="${url.context}/res/components/header/signature-proof-share.js?v=1"></script>
 </@>

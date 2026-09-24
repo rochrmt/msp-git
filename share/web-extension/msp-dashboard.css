@@ -2122,3 +2122,15 @@ div.title h1,
     height: 100%;
     margin-bottom: 0;
 }
+
+/* Ligne interne : deux dashlets côte à côte dans une même colonne */
+.msp-dashlet-row {
+    display: flex;
+    gap: 18px;
+    align-items: stretch;
+}
+
+.msp-dashlet-row > * {
+    flex: 1 1 0;
+    min-width: 0;
+}
